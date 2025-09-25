@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
+import { CARD_IMAGE_ASPECT } from "@/config/ui";
 
 interface FeaturedProduct {
   id: number;
@@ -70,12 +71,12 @@ export function FeaturedGrid({
             className="group overflow-hidden rounded-md border bg-white shadow hover:shadow-md transition-shadow"
           >
             <div className="bg-white p-2">
-              <AspectRatio ratio={1}>
+              <AspectRatio ratio={CARD_IMAGE_ASPECT === 'square' ? 1 : 4/5}>
                 {p?.image ? (
                   <img
                     src={p.image}
                     alt={p.name}
-                    className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
                   />
                 ) : (

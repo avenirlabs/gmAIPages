@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { ProductItem } from "@shared/api";
+import { getImageAspectClass } from "@/config/ui";
 
 interface Props {
   product: ProductItem;
@@ -18,11 +19,11 @@ export function ProductCard({ product, className }: Props) {
       )}
     >
       {product.image ? (
-        <div className="relative aspect-[4/3] w-full overflow-hidden">
+        <div className={cn("relative w-full overflow-hidden", getImageAspectClass())}>
           <img
             src={product.image}
             alt={product.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
             loading="lazy"
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 to-transparent" />
