@@ -218,16 +218,73 @@ const handlers = {
     return res.json({
       message: "Chat endpoint ready. Send POST request with {\"query\": \"your search\"} to search.",
       timestamp: new Date().toISOString(),
-      method: 'POST'
+      method: 'POST',
+      example: {
+        url: '/api/gifts/chat',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: { query: 'birthday gifts for mom' }
+      }
+    });
+  },
+
+  // Debug POST endpoint
+  'POST /debug-body': async (req, res) => {
+    return res.json({
+      receivedBody: req.body,
+      bodyType: typeof req.body,
+      isBuffer: Buffer.isBuffer(req.body),
+      rawBody: req.body ? req.body.toString() : null,
+      headers: req.headers,
+      timestamp: new Date().toISOString()
     });
   },
 
   'POST /gifts/chat': async (req, res) => {
     try {
-      const { query, sessionId } = req.body || {};
+      // Handle different body parsing scenarios
+      let bodyData = req.body;
+
+      // If body is string, try to parse it
+      if (typeof bodyData === "string") {
+        try {
+          bodyData = JSON.parse(bodyData);
+        } catch (parseError) {
+          return res.status(400).json({
+            error: "Invalid JSON in request body",
+            details: parseError.message,
+            receivedBody: typeof req.body,
+            sample: "Expected: {\"query\": \"your search term\"}"
+          });
+        }
+      }
+
+      // If body is Buffer, convert and parse
+      if (Buffer.isBuffer(bodyData)) {
+        try {
+          bodyData = JSON.parse(bodyData.toString("utf8"));
+        } catch (parseError) {
+          return res.status(400).json({
+            error: "Invalid JSON in buffer body",
+            details: parseError.message
+          });
+        }
+      }
+
+      const { query, sessionId } = bodyData || {};
 
       if (!query || typeof query !== "string" || query.trim().length === 0) {
-        return res.status(400).json({ error: "Missing or invalid query parameter" });
+        return res.status(400).json({
+          error: "Missing or invalid query parameter",
+          receivedBody: bodyData,
+          expectedFormat: "{ \"query\": \"your search term\" }",
+          debug: {
+            hasQuery: !!query,
+            queryType: typeof query,
+            bodyType: typeof bodyData,
+            bodyKeys: bodyData ? Object.keys(bodyData) : []
+          }
+        });
       }
 
       const actualSessionId = sessionId || randomUUID();
