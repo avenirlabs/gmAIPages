@@ -299,15 +299,34 @@ const handlers = {
       if (client) {
         try {
           const indexName = process.env.ALGOLIA_INDEX_NAME || 'gmProducts';
-          const index = client.initIndex(indexName);
-          const { hits } = await index.search(searchQuery.trim(), { hitsPerPage: 12 });
+          const searchResult = await client.searchSingleIndex({
+            indexName,
+            searchParams: {
+              query: searchQuery.trim(),
+              hitsPerPage: 12,
+              attributesToRetrieve: [
+                'objectID',
+                'title',
+                'name',
+                'description',
+                'price',
+                'currency',
+                'image',
+                'url',
+                'link',
+                'tags',
+                'vendor'
+              ]
+            }
+          });
 
+          const hits = searchResult.hits || [];
           products = hits.map(hit => ({
             id: hit.objectID || hit.id,
             title: hit.name || hit.title,
             description: hit.description,
             price: hit.price,
-            currency: 'USD',
+            currency: hit.currency || 'USD',
             image: hit.image,
             url: hit.link || hit.url,
             tags: hit.tags || [],
