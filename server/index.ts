@@ -90,12 +90,47 @@ export function createServer() {
   map("get", "/api/debug/env", (_req, res) => {
     res.json({
       hasSupabaseUrl: !!process.env.SUPABASE_URL,
+      supabaseUrlPrefix: process.env.SUPABASE_URL ? process.env.SUPABASE_URL.substring(0, 20) + '...' : 'missing',
       hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE,
+      supabaseKeyPrefix: process.env.SUPABASE_SERVICE_ROLE ? process.env.SUPABASE_SERVICE_ROLE.substring(0, 20) + '...' : 'missing',
       hasOpenAI: !!process.env.OPENAI_API_KEY,
+      openaiKeyPrefix: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 20) + '...' : 'missing',
       hasAlgolia: !!process.env.ALGOLIA_APP_ID,
+      algoliaAppId: process.env.ALGOLIA_APP_ID || 'missing',
       nodeEnv: process.env.NODE_ENV,
-      timestamp: new Date().toISOString()
+      platform: process.platform,
+      isVercel: !!process.env.VERCEL,
+      timestamp: new Date().toISOString(),
+      envKeysCount: Object.keys(process.env).length
     });
+  });
+
+  map("get", "/api/debug/supabase", async (_req, res) => {
+    try {
+      const { getSupabaseAdmin } = await import("./services/supabase");
+      const sb = getSupabaseAdmin();
+      if (!sb) {
+        return res.json({ error: "Supabase client not initialized - missing credentials" });
+      }
+
+      // Test actual database connection by querying pages table
+      const { data, error } = await sb
+        .from("pages")
+        .select("count")
+        .limit(1);
+
+      return res.json({
+        supabaseConnected: true,
+        databaseTest: error ? `Database Error: ${error.message}` : `Database connected - found pages table`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err: any) {
+      return res.json({
+        supabaseConnected: false,
+        error: err.message,
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   map("get", "/api/demo", handleDemo);
