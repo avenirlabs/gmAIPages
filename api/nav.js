@@ -35,6 +35,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "No Supabase config" });
     }
 
+    // Try to get nav links, fallback to empty array if table doesn't exist
     const { data, error } = await sb
       .from("nav_links")
       .select("label, href, position")
@@ -42,7 +43,15 @@ export default async function handler(req, res) {
       .order("position", { ascending: true });
 
     if (error) {
-      return res.status(500).json({ error: error.message });
+      console.error('Nav links database error:', error.message);
+      // Return empty links array if table doesn't exist or other DB error
+      const emptyLinks = [];
+      cached = { at: Date.now(), data: emptyLinks };
+      return res.json({
+        links: emptyLinks,
+        error: error.message,
+        fallback: true
+      });
     }
 
     const links = (data || []).map((l) => ({

@@ -1,18 +1,24 @@
 // Algolia chat/search endpoint
-import { algoliasearch } from 'algoliasearch';
 import { randomUUID } from 'crypto';
 
-function getAlgoliaClient() {
+async function getAlgoliaClient() {
   const appId = process.env.ALGOLIA_APP_ID;
   const apiKey = process.env.ALGOLIA_API_KEY;
 
   if (!appId || !apiKey) return null;
 
-  return algoliasearch(appId, apiKey);
+  try {
+    // Dynamic import for algoliasearch
+    const { algoliasearch } = await import('algoliasearch');
+    return algoliasearch(appId, apiKey);
+  } catch (error) {
+    console.error('Failed to import algoliasearch:', error);
+    return null;
+  }
 }
 
 async function searchProducts(query, filters = [], limit = 12, context) {
-  const client = getAlgoliaClient();
+  const client = await getAlgoliaClient();
   if (!client) return [];
 
   const indexName = process.env.ALGOLIA_INDEX_NAME || 'gmProducts';

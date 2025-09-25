@@ -65,14 +65,19 @@ export default async function handler(req, res) {
     url.searchParams.set("consumer_secret", secret);
 
     const response = await fetch(url.toString(), {
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "GiftsGuru/1.0"
+      },
     });
 
     if (!response.ok) {
       const text = await response.text();
+      console.error('WooCommerce API error:', response.status, text);
       return res.status(response.status).json({
         error: "WooCommerce API error",
-        details: text
+        details: text,
+        status: response.status
       });
     }
 
