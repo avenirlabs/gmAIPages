@@ -108,7 +108,7 @@ First page:
 ```bash
 curl -sS -X POST \
   -H 'Content-Type: application/json' \
-  -d '{"message":"gifts for sister who loves cooking under $50"}' \
+  -d '{"message":"gifts for sister who loves cooking under ₹500"}' \
   https://<your-site>/api/gifts/chat
 ```
 
@@ -116,7 +116,7 @@ Load more (using cursor):
 ```bash
 curl -sS -X POST \
   -H 'Content-Type: application/json' \
-  -d '{"message":"gifts for sister who loves cooking under $50","cursor":"page:2","intentToken":"eyJ..."}' \
+  -d '{"message":"gifts for sister who loves cooking under ₹500","cursor":"page:2","intentToken":"eyJ..."}' \
   https://<your-site>/api/gifts/chat
 ```
 

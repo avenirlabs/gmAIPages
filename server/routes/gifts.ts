@@ -150,7 +150,7 @@ export const handleChat = async (req: any, res: any) => {
     console.log("/api/gifts/chat", {
       q: parsed.searchQuery,
       filters: parsed.filters,
-      count: products.length,
+      count: searchResult.products.length,
       ms: latency,
     });
     res.status(200).json(payload);

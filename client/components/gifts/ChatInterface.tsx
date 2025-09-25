@@ -32,7 +32,7 @@ export function ChatInterface({
     {
       role: "assistant",
       content:
-        "Hi! I can help you find the perfect gift. Tell me who it's for and the occasion (e.g. 'gifts for sister who loves cooking, budget under $50').",
+        "Hi! I can help you find the perfect gift. Tell me who it's for and the occasion (e.g. 'gifts for sister who loves cooking, budget under ₹500').",
     },
   ]);
   const [input, setInput] = useState("");
@@ -254,7 +254,7 @@ export function ChatInterface({
 
   const placeholder = useMemo(
     () =>
-      "Try: gifts for sister who loves cooking under $50, or: birthday ideas for gym lover",
+      "Try: gifts for sister who loves cooking under ₹500, or: birthday ideas for gym lover",
     [],
   );
 
