@@ -33,14 +33,33 @@ export interface ChatTurn {
   refineChips?: string[];
 }
 
+export interface PageInfo {
+  total: number;
+  pageSize: number;
+  nextCursor?: string;
+  prevCursor?: string;
+  page?: number;
+  totalPages?: number;
+}
+
 export interface ChatRequestBody {
   message: string;
   history?: ChatTurn[];
   selectedRefinements?: string[];
+  cursor?: string;
+  page?: number;
+  perPage?: number;
+  intentToken?: string;
 }
 
 export interface ChatResponseBody {
   reply: string;
   products: ProductItem[];
   refineChips: string[];
+  pageInfo: PageInfo;
+  meta?: {
+    queryLatencyMs: number;
+    source: 'algolia';
+    intentToken?: string;
+  };
 }

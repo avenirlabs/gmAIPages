@@ -5,6 +5,7 @@ export interface ParsedNLPResult {
   refineChips: string[];
   filters: string[];
   replyBlurb: string;
+  intentToken?: string;
 }
 
 const BASE_CHIPS = [
@@ -21,6 +22,61 @@ const BASE_CHIPS = [
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 import type { ChatTurn } from "@shared/api";
+
+// Intent token helpers for pagination without re-processing
+export function createIntentToken(result: ParsedNLPResult): string {
+  const tokenData = {
+    searchQuery: result.searchQuery,
+    refineChips: result.refineChips,
+    filters: result.filters,
+    replyBlurb: result.replyBlurb,
+    timestamp: Date.now()
+  };
+  return Buffer.from(JSON.stringify(tokenData)).toString('base64');
+}
+
+export function decodeIntentToken(token: string): ParsedNLPResult | null {
+  try {
+    const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf-8'));
+    // Validate token is not too old (1 hour max)
+    if (Date.now() - decoded.timestamp > 3600000) {
+      return null;
+    }
+    return {
+      searchQuery: decoded.searchQuery,
+      refineChips: decoded.refineChips || [],
+      filters: decoded.filters || [],
+      replyBlurb: decoded.replyBlurb,
+      intentToken: token
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function parseUserQueryWithIntentToken(
+  message: string,
+  selectedRefinements: string[] = [],
+  history: ChatTurn[] = [],
+  intentToken?: string,
+): Promise<ParsedNLPResult> {
+  // If intent token provided and valid, reuse it
+  if (intentToken) {
+    const decoded = decodeIntentToken(intentToken);
+    if (decoded) {
+      return {
+        ...decoded,
+        // Update filters with current selectedRefinements if provided
+        filters: selectedRefinements.length > 0 ? selectedRefinements : decoded.filters
+      };
+    }
+  }
+
+  // Otherwise, perform fresh OpenAI parsing
+  const result = await parseUserQueryWithOpenAI(message, selectedRefinements, history);
+  result.intentToken = createIntentToken(result);
+  return result;
+}
 
 export async function parseUserQueryWithOpenAI(
   message: string,

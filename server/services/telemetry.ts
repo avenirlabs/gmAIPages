@@ -15,6 +15,15 @@ interface LogChatParams {
   ua?: string | null;
   country?: string | null;
   city?: string | null;
+  // Pagination fields
+  page?: number;
+  pageSize?: number;
+  totalResults?: number;
+  nextCursorExists?: boolean;
+  returnedCount?: number;
+  zeroHits?: boolean;
+  fallbackSuggestions?: string[];
+  intentTokenUsed?: boolean;
 }
 
 export async function logChatEvent(params: LogChatParams) {
@@ -50,6 +59,15 @@ export async function logChatEvent(params: LogChatParams) {
       ua: piiDisabled ? null : (params.ua ?? null),
       country: piiDisabled ? null : (params.country ?? null),
       city: piiDisabled ? null : (params.city ?? null),
+      // New pagination and analytics fields
+      page: params.page,
+      page_size: params.pageSize,
+      total_results: params.totalResults,
+      next_cursor_exists: params.nextCursorExists,
+      returned_count: params.returnedCount,
+      zero_hits: params.zeroHits || false,
+      fallback_suggestions: params.fallbackSuggestions,
+      intent_token_used: params.intentTokenUsed || false,
     });
   } catch (e) {
     // best-effort only

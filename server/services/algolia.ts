@@ -109,11 +109,148 @@ async function getClient(): Promise<any> {
   return client;
 }
 
+export interface AlgoliaSearchResult {
+  products: ProductItem[];
+  total: number;
+  latencyMs: number;
+  nextCursor?: string;
+  prevCursor?: string;
+  page: number;
+  totalPages: number;
+}
+
+export async function searchProductsPaginated(
+  query: string,
+  filters: string[] = [],
+  limit = 12,
+  context?: { chips?: string[]; page?: number; cursor?: string },
+): Promise<AlgoliaSearchResult> {
+  const c = await getClient();
+  const indexName = process.env.ALGOLIA_INDEX_NAME;
+  if (!c || !indexName) {
+    return {
+      products: [],
+      total: 0,
+      latencyMs: 0,
+      page: 1,
+      totalPages: 0
+    };
+  }
+
+  // Parse pagination
+  let currentPage = 1;
+  if (context?.cursor) {
+    const match = context.cursor.match(/^page:(\d+)$/);
+    if (match) {
+      currentPage = parseInt(match[1]);
+    }
+  } else if (context?.page && context.page > 0) {
+    currentPage = context.page;
+  }
+
+  const facetFilters = filters.filter((f) => /.+:.+/.test(f)).map((f) => [f]);
+  const extraKeywords = filters.filter((f) => !/.+:.+/.test(f)).join(" ");
+  const chipKeywords = (context?.chips ?? []).join(" ");
+  const combinedQuery = [query, extraKeywords, chipKeywords]
+    .filter(Boolean)
+    .join(" ");
+  const signals = extractSignals(combinedQuery);
+
+  try {
+    const { withTimeout } = await import("../utils/async.js");
+    const startTime = Date.now();
+    const res = await withTimeout(
+      c.searchSingleIndex({
+        indexName,
+        searchParams: {
+          query: combinedQuery,
+          hitsPerPage: limit,
+          page: currentPage - 1, // Algolia uses 0-based pages
+          attributesToRetrieve: [
+            "objectID",
+            "title",
+            "name",
+            "description",
+            "price",
+            "currency",
+            "image",
+            "url",
+            "tags",
+            "vendor",
+          ],
+          facetFilters: facetFilters.length ? (facetFilters as any) : undefined,
+        },
+      }),
+      3500,
+      async () => ({ hits: [], nbHits: 0, processingTimeMS: 0 }) as any,
+    );
+
+    const hits = (res as any).hits ?? [];
+    const total = (res as any).nbHits ?? 0;
+    const searchLatency = (res as any).processingTimeMS ?? 0;
+    const totalLatencyMs = Date.now() - startTime;
+
+    if (!hits.length) {
+      return {
+        products: [],
+        total,
+        latencyMs: totalLatencyMs,
+        page: currentPage,
+        totalPages: Math.ceil(total / limit)
+      };
+    }
+
+    const products = hits.map((h: any) => {
+      const title = String(h.title ?? h.name ?? "");
+      const desc = String(h.description ?? "");
+      const tagsStr = Array.isArray(h.tags) ? (h.tags as any[]).join(" ") : "";
+      const hay = `${title} ${desc} ${tagsStr}`;
+      const wScore = weightedScore(hay, signals);
+
+      return {
+        id: String(h.objectID ?? h.id ?? h.url ?? Math.random()),
+        title,
+        description: h.description,
+        price: typeof h.price === "number" ? h.price : undefined,
+        currency: typeof h.currency === "string" ? h.currency : undefined,
+        image: h.image,
+        url: String(h.url ?? "#"),
+        tags: Array.isArray(h.tags) ? (h.tags as string[]) : undefined,
+        vendor: h.vendor,
+        score: wScore,
+      } as ProductItem;
+    });
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNext = currentPage < totalPages;
+    const hasPrev = currentPage > 1;
+
+    return {
+      products,
+      total,
+      latencyMs: totalLatencyMs,
+      page: currentPage,
+      totalPages,
+      ...(hasNext && { nextCursor: `page:${currentPage + 1}` }),
+      ...(hasPrev && { prevCursor: `page:${currentPage - 1}` })
+    };
+  } catch (e) {
+    console.error("Algolia paginated search failed", e);
+    return {
+      products: [],
+      total: 0,
+      latencyMs: 0,
+      page: currentPage,
+      totalPages: 0
+    };
+  }
+}
+
 export async function searchProducts(
   query: string,
   filters: string[] = [],
   limit = 12,
-  context?: { chips?: string[] },
+  context?: { chips?: string[]; page?: number; cursor?: string },
 ): Promise<ProductItem[]> {
   const c = await getClient();
   const indexName = process.env.ALGOLIA_INDEX_NAME;
