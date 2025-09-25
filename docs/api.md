@@ -27,15 +27,43 @@ GET /api/nav/links
 
 ## Chat (AI Gifts)
 POST /api/gifts/chat
-- Body: { message: string, selectedRefinements?: string[], history?: ChatTurn[] }
-- 200 { reply, products: ProductItem[], refineChips: string[] }
+- Body: { message: string, selectedRefinements?: string[], history?: ChatTurn[], cursor?: string, page?: number, perPage?: number, intentToken?: string }
+- 200 { reply, products: ProductItem[], refineChips: string[], pageInfo: PageInfo, meta?: { queryLatencyMs: number, source: 'algolia', intentToken?: string } }
 - Fallback endpoints also accepted: /.netlify/functions/api/gifts/chat or /gifts/chat
 
-Example
+**Pagination Support:**
+- `cursor`: Opaque pagination cursor (format: "page:N")
+- `page`: 1-based page number (alternative to cursor)
+- `perPage`: Results per page (default: 12, configurable via CHAT_PAGE_SIZE)
+- `intentToken`: Reuse parsed intent for subsequent pages (performance optimization)
+
+**Response Structure:**
+```typescript
+interface PageInfo {
+  total: number;           // Total number of results available
+  pageSize: number;        // Number of results per page
+  nextCursor?: string;     // Present if more results available
+  prevCursor?: string;     // Present if previous page exists
+  page?: number;           // Current page number
+  totalPages?: number;     // Total pages available
+}
+```
+
+**Examples:**
+
+First page:
 ```bash
 curl -sS -X POST \
   -H 'Content-Type: application/json' \
   -d '{"message":"gifts for sister who loves cooking under $50"}' \
+  https://<your-site>/api/gifts/chat
+```
+
+Load more (using cursor):
+```bash
+curl -sS -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"gifts for sister who loves cooking under $50","cursor":"page:2","intentToken":"eyJ..."}' \
   https://<your-site>/api/gifts/chat
 ```
 
