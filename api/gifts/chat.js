@@ -9,8 +9,8 @@ async function getAlgoliaClient() {
 
   try {
     // Dynamic import for algoliasearch
-    const { algoliasearch } = await import('algoliasearch');
-    return algoliasearch(appId, apiKey);
+    const algoliasearch = await import('algoliasearch');
+    return algoliasearch.algoliasearch(appId, apiKey);
   } catch (error) {
     console.error('Failed to import algoliasearch:', error);
     return null;
@@ -22,7 +22,7 @@ async function searchProducts(query, filters = [], limit = 12, context) {
   if (!client) return [];
 
   const indexName = process.env.ALGOLIA_INDEX_NAME || 'gmProducts';
-  const index = client.getIndex(indexName);
+  const index = client.initIndex(indexName);
 
   try {
     const { hits } = await index.search(query, {

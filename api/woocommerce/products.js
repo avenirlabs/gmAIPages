@@ -1,0 +1,116 @@
+// WooCommerce products endpoint (frontend expects /api/woocommerce/products)
+
+// Cache with TTL and ETag
+const cache = new Map();
+const TTL_MS = 1000 * 60 * 10; // 10 minutes
+
+function computeEtag(obj) {
+  const s = JSON.stringify(obj);
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return `W/"${h.toString(16)}-${s.length}"`;
+}
+
+function mapProducts(data) {
+  return data.map((p) => ({
+    id: p.id,
+    name: p.name,
+    link: p.permalink,
+    image: p.images && p.images.length ? p.images[0].src : undefined,
+    price: p.price ? parseFloat(p.price) : undefined,
+    regular_price: p.regular_price ? parseFloat(p.regular_price) : undefined,
+    sale_price: p.sale_price ? parseFloat(p.sale_price) : undefined,
+  }));
+}
+
+export default async function handler(req, res) {
+  try {
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+
+    const base = (process.env.WOOCOMMERCE_BASE_URL || "").replace(/\/+$/, "");
+    const key = process.env.WOOCOMMERCE_CONSUMER_KEY;
+    const secret = process.env.WOOCOMMERCE_CONSUMER_SECRET;
+
+    if (!base || !key || !secret) {
+      return res.status(500).json({ error: "WooCommerce credentials not configured" });
+    }
+
+    // Parse query parameters for flexibility
+    const source = req.query.source || "featured";
+    const per_page = req.query.per_page || "20";
+    const category_slug = req.query.category_slug;
+
+    const cacheKey = JSON.stringify({ source, per_page, category_slug });
+    const hit = cache.get(cacheKey);
+
+    if (hit && Date.now() - hit.at < TTL_MS) {
+      const inm = req.headers["if-none-match"];
+      if (inm && inm === hit.etag) {
+        return res.status(304).end();
+      }
+      res.setHeader("ETag", hit.etag);
+      res.setHeader("Cache-Control", "public, max-age=300");
+      return res.json({ products: hit.data });
+    }
+
+    const url = new URL(base + "/wp-json/wc/v3/products");
+    url.searchParams.set("per_page", String(per_page));
+    url.searchParams.set("status", "publish");
+    url.searchParams.set("_fields", "id,name,permalink,images,price,regular_price,sale_price");
+    url.searchParams.set("consumer_key", key);
+    url.searchParams.set("consumer_secret", secret);
+
+    // Handle different source types
+    if (source === "featured") {
+      url.searchParams.set("featured", "true");
+    } else if (source === "best_sellers") {
+      url.searchParams.set("orderby", "popularity");
+      url.searchParams.set("order", "desc");
+    } else if (source === "category" && category_slug) {
+      // Would need to resolve category slug to ID, but for now just use featured
+      url.searchParams.set("featured", "true");
+    }
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "GiftsGuru/1.0"
+      },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('WooCommerce API error:', response.status, text);
+      return res.status(response.status).json({
+        error: "WooCommerce API error",
+        details: text,
+        status: response.status
+      });
+    }
+
+    const data = await response.json();
+    const products = mapProducts(data);
+    const etag = computeEtag(products);
+
+    cache.set(cacheKey, { at: Date.now(), data: products, etag });
+
+    res.setHeader("ETag", etag);
+    res.setHeader("Cache-Control", "public, max-age=300");
+    return res.json({ products });
+
+  } catch (err) {
+    console.error('WooCommerce endpoint error:', err);
+    return res.status(500).json({
+      error: "Failed to fetch products",
+      details: err?.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}

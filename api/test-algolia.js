@@ -26,9 +26,9 @@ export default async function handler(req, res) {
 
     try {
       // Dynamic import for algoliasearch
-      const { algoliasearch } = await import('algoliasearch');
-      const client = algoliasearch(appId, apiKey);
-      const index = client.getIndex(indexName);
+      const algoliasearch = await import('algoliasearch');
+      const client = algoliasearch.algoliasearch(appId, apiKey);
+      const index = client.initIndex(indexName);
 
       // Test search
       const { hits, nbHits } = await index.search('test', {
