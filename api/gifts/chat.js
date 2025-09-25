@@ -8,9 +8,10 @@ async function getAlgoliaClient() {
   if (!appId || !apiKey) return null;
 
   try {
-    // Dynamic import for algoliasearch
-    const algoliasearch = await import('algoliasearch');
-    return algoliasearch.algoliasearch(appId, apiKey);
+    // Dynamic import for algoliasearch using the correct pattern
+    const mod = await import('algoliasearch');
+    const ctor = mod.default ?? mod.algoliasearch;
+    return ctor(appId, apiKey);
   } catch (error) {
     console.error('Failed to import algoliasearch:', error);
     return null;
@@ -135,8 +136,16 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
 
+    if (req.method === 'GET') {
+      return res.status(200).json({
+        message: "Chat endpoint ready. Send POST request with {\"query\": \"your search\"} to search.",
+        timestamp: new Date().toISOString(),
+        method: 'POST'
+      });
+    }
+
     if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
+      return res.status(405).json({ error: 'Method not allowed. Use POST.' });
     }
 
     const started = Date.now();
