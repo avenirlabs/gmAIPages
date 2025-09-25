@@ -603,6 +603,177 @@ interface SyncStatistics {
 
 **Outcome**: Successfully removed all product indexing functionality while preserving core gift recommendation search capabilities. Application is now simplified and focused on content management and gift recommendations without complex product synchronization features. Server runs cleanly without indexing-related errors, and admin interface provides streamlined page management functionality.
 
+### 2025-09-25
+
+#### Task #010: Vercel Deployment & Serverless Function Optimization
+**Type**: Deployment / Bug Fix
+**Status**: ✅ Completed
+**Performed by**: Claude Code AI Assistant
+**Duration**: ~120 minutes
+
+**Objective**: Successfully deploy the Gifts Guru AI application to Vercel, resolving multiple deployment issues including TypeScript errors, ES module compatibility, and Vercel Hobby plan limitations.
+
+**Problem Sequence & Resolution**:
+
+1. **Initial Deployment Issues**:
+   - **Problem**: 404 errors on all API endpoints after Vercel deployment
+   - **Cause**: Incorrect Vercel routing configuration in `vercel.json`
+   - **Resolution**: Updated `vercel.json` rewrites to properly route `/api/*` requests
+
+2. **Serverless Function Crashes**:
+   - **Problem**: `500 FUNCTION_INVOCATION_FAILED` errors on all API endpoints
+   - **Cause**: ES module compatibility issues with `module.exports` in serverless functions
+   - **Resolution**: Converted all API functions from CommonJS to ES modules syntax (`export default function handler`)
+
+3. **TypeScript Build Failures**:
+   - **Problem**: TypeScript compilation errors preventing deployment
+   - **Cause**: Express `RequestHandler` type conflicts in serverless environment
+   - **Resolution**: Updated type annotations from `RequestHandler` to `any` in:
+     - `/api-backup/gifts.js`
+     - `/api-backup/pages.js`
+     - `/api-backup/nav.js`
+     - `/api-backup/woocommerce.js`
+
+4. **Algolia Import Errors**:
+   - **Problem**: `client.getIndex is not a function` errors
+   - **Cause**: Incorrect Algolia client import pattern in serverless functions
+   - **Resolution**: Fixed import pattern using working server code reference:
+     ```javascript
+     const mod = await import('algoliasearch');
+     const ctor = mod.default ?? mod.algoliasearch;
+     ```
+
+5. **Vercel Function Limit Exceeded**:
+   - **Problem**: `No more than 12 Serverless Functions can be added to a Deployment on the Hobby plan`
+   - **Cause**: 13 individual API endpoint files exceeded Vercel's Hobby plan limit
+   - **Resolution**: Consolidated all API endpoints into single `/api/index.js` with internal routing
+
+**Major Implementation: API Consolidation**
+
+Created comprehensive single serverless function at `/api/index.js` containing:
+
+**Internal Routing System**:
+- Dynamic route matching for `/pages/:slug` patterns
+- Path normalization (removes `/api` prefix)
+- Method-based routing (`GET /debug`, `POST /gifts/chat`, etc.)
+- 404 handling with available routes listing
+
+**Consolidated Endpoints**:
+- **Debug**: `/debug`, `/ping`, `/hello`
+- **Navigation**: `/nav/links`
+- **Pages**: `/pages/home`, `/pages/:slug`
+- **WooCommerce**: `/woocommerce/products`, `/woocommerce/featured`
+- **Chat/Search**: `/gifts/chat` (GET and POST)
+- **Admin**: `/admin/cache/refresh`
+- **Testing**: `/test-algolia`, `/test-woo`
+
+**Features Implemented**:
+- **CORS Headers**: Automatic CORS handling for all endpoints
+- **Body Parsing**: Comprehensive request body parsing (string, Buffer, object)
+- **Caching System**: TTL-based in-memory caching (10-minute TTL)
+- **Error Handling**: Consistent error responses with debugging information
+- **Service Integration**: Supabase, Algolia, WooCommerce clients with fallbacks
+
+6. **Chat API Format Compatibility**:
+   - **Problem**: Frontend sending `{ message: "text" }` but API expecting `{ query: "text" }`
+   - **Resolution**: Updated API to accept both formats and return proper `ChatResponseBody` structure
+   - **Enhancement**: Added dynamic refinement chips generation and helpful AI replies
+
+7. **Final Algolia Method Fix**:
+   - **Problem**: `client.initIndex is not a function` error
+   - **Cause**: Using outdated Algolia API methods
+   - **Resolution**: Updated to use `client.searchSingleIndex()` method matching working server code
+
+**Technical Architecture Changes**:
+
+**From**: 13 individual serverless functions
+```
+/api/debug.js
+/api/gifts.js
+/api/nav/links.js
+/api/pages/home.js
+/api/pages/[slug].js
+/api/woocommerce/products.js
+/api/woocommerce/featured.js
+... (6 more files)
+```
+
+**To**: Single consolidated function with internal routing
+```
+/api/index.js - Handles all API traffic internally
+/api-backup/ - Original files preserved
+```
+
+**Files Created/Modified**:
+- **`/api/index.js`** - Master API handler with 13+ endpoints (NEW)
+- **`/vercel.json`** - Updated routing configuration
+- **`/api-backup/`** - Moved original API files for reference
+- **Git commits** - 8 deployment-related commits with detailed messages
+
+**Vercel Configuration Optimizations**:
+```json
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/spa",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, PUT, DELETE, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+      ]
+    }
+  ]
+}
+```
+
+**API Response Format Standardization**:
+- **Chat API**: Returns `{ reply: string, products: ProductItem[], refineChips: string[] }`
+- **Product Mapping**: Algolia hits mapped to frontend-expected format
+- **Error Handling**: Consistent error structure with debugging details
+- **Caching**: Intelligent caching with TTL expiration
+
+**Performance Optimizations**:
+- **Attribute Limiting**: Algolia queries only retrieve necessary fields
+- **Batch Size**: Optimal 12 products per search request
+- **Memory Efficiency**: Single function reduces cold start overhead
+- **Caching Strategy**: 10-minute TTL for navigation and page content
+
+**Debugging Tools Added**:
+- **`/api/debug`** - Environment variable status
+- **`/api/debug-body`** - Request body debugging for troubleshooting
+- **Error Messages** - Detailed error information with context
+- **Available Routes** - 404 responses include available endpoint list
+
+**Git Repository Updates**:
+- **8 commits** - Systematic deployment fixes with detailed commit messages
+- **Backup Strategy** - Original API files preserved in `/api-backup/`
+- **Clean History** - Each major fix tracked with specific commit messages
+
+**Current Deployment Status**:
+- ✅ **Build**: Successful TypeScript compilation
+- ✅ **Function Count**: 1/12 functions used (within Hobby plan limit)
+- ✅ **API Endpoints**: All endpoints responding correctly
+- ✅ **CORS**: Cross-origin requests working
+- ✅ **Frontend Integration**: React app communicating with API
+- ✅ **Service Integration**: Supabase, Algolia, WooCommerce connected
+- ✅ **Error Handling**: Graceful fallbacks and debugging information
+
+**Testing Results**:
+- **Navigation API**: ✅ Working (`/api/nav/links`)
+- **Page Content**: ✅ Working (`/api/pages/home`, `/api/pages/:slug`)
+- **WooCommerce Products**: ✅ Working (`/api/woocommerce/products`)
+- **Chat Interface**: ✅ Working (`/api/gifts/chat`)
+- **Debug Endpoints**: ✅ Working (`/api/debug`, `/api/ping`)
+
+**Outcome**: Successfully deployed Gifts Guru AI application to Vercel with full functionality. All major deployment challenges resolved including ES module compatibility, TypeScript compilation, Vercel function limits, and API format compatibility. Application now runs smoothly on Vercel with consolidated serverless architecture, proper error handling, and complete feature set preserved.
+
 ---
 
 ## Task Categories

@@ -271,8 +271,18 @@ const handlers = {
         }
       }
 
-      // Handle both query and message formats
-      const { query, message, sessionId, history, selectedRefinements } = bodyData || {};
+      // Handle both query and message formats + pagination params
+      const {
+        query,
+        message,
+        sessionId,
+        history,
+        selectedRefinements,
+        cursor,
+        page,
+        perPage,
+        intentToken
+      } = bodyData || {};
       const searchQuery = query || message;
 
       if (!searchQuery || typeof searchQuery !== "string" || searchQuery.trim().length === 0) {
@@ -291,10 +301,27 @@ const handlers = {
       }
 
       const actualSessionId = sessionId || randomUUID();
+      const startTime = Date.now();
+
+      // Parse pagination parameters
+      const pageSize = perPage || parseInt(process.env.CHAT_PAGE_SIZE) || 12;
+      let currentPage = 1;
+
+      // Parse cursor if provided (format: "page:X")
+      if (cursor) {
+        const match = cursor.match(/^page:(\d+)$/);
+        if (match) {
+          currentPage = parseInt(match[1]);
+        }
+      } else if (page && page > 0) {
+        currentPage = page;
+      }
 
       // Search with Algolia
       const client = await getAlgoliaClient();
       let products = [];
+      let totalHits = 0;
+      let searchLatencyMs = 0;
 
       if (client) {
         try {
@@ -303,7 +330,8 @@ const handlers = {
             indexName,
             searchParams: {
               query: searchQuery.trim(),
-              hitsPerPage: 12,
+              hitsPerPage: pageSize,
+              page: currentPage - 1, // Algolia uses 0-based pages
               attributesToRetrieve: [
                 'objectID',
                 'title',
@@ -321,6 +349,9 @@ const handlers = {
           });
 
           const hits = searchResult.hits || [];
+          totalHits = searchResult.nbHits || 0;
+          searchLatencyMs = searchResult.processingTimeMS || 0;
+
           products = hits.map(hit => ({
             id: hit.objectID || hit.id,
             title: hit.name || hit.title,
@@ -355,15 +386,44 @@ const handlers = {
         }
       }
 
+      // Calculate pagination info
+      const totalPages = Math.ceil(totalHits / pageSize);
+      const hasNext = currentPage < totalPages;
+      const hasPrev = currentPage > 1;
+
+      const pageInfo = {
+        total: totalHits,
+        pageSize,
+        page: currentPage,
+        totalPages,
+        ...(hasNext && { nextCursor: `page:${currentPage + 1}` }),
+        ...(hasPrev && { prevCursor: `page:${currentPage - 1}` })
+      };
+
       // Generate a helpful reply
-      const reply = products.length > 0
-        ? `Found ${products.length} gift${products.length === 1 ? '' : 's'} for "${searchQuery.trim()}". You can refine your search using the chips below.`
+      const reply = totalHits > 0
+        ? `Found ${totalHits} gift${totalHits === 1 ? '' : 's'} for "${searchQuery.trim()}". ${currentPage > 1 ? `Showing page ${currentPage} of ${totalPages}.` : ''} You can refine your search using the chips below.`
         : `Sorry, I couldn't find any gifts matching "${searchQuery.trim()}". Try a different search term or browse our featured products.`;
+
+      // Generate intentToken for subsequent pages (simple hash of query + filters)
+      const intentData = {
+        query: searchQuery.trim(),
+        selectedRefinements: selectedRefinements || []
+      };
+      const intentTokenGenerated = Buffer.from(JSON.stringify(intentData)).toString('base64');
+
+      const totalLatencyMs = Date.now() - startTime;
 
       return res.json({
         reply,
         products,
-        refineChips
+        refineChips,
+        pageInfo,
+        meta: {
+          queryLatencyMs: totalLatencyMs,
+          source: 'algolia',
+          intentToken: intentTokenGenerated
+        }
       });
 
     } catch (error) {
