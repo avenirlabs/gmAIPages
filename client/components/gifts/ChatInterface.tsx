@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ChatMessage } from "./ChatMessage";
 import { RefinementChips } from "./RefinementChips";
-import type { ChatResponseBody, ProductItem } from "@shared/api";
+import { EmptyState } from "./EmptyState";
+import type { ChatResponseBody, ProductItem, PageInfo } from "@shared/api";
 import { Button } from "@/components/ui/button";
 import { StarterPrompts } from "./StarterPrompts";
 
@@ -11,6 +12,9 @@ interface Turn {
   content: string;
   products?: ProductItem[];
   refineChips?: string[];
+  pageInfo?: PageInfo;
+  meta?: any;
+  query?: string; // Store original query for pagination
 }
 
 export function ChatInterface({
@@ -27,12 +31,13 @@ export function ChatInterface({
   ]);
   const [input, setInput] = useState("");
   const [lastRefine, setLastRefine] = useState<string[]>([]);
+  const [loadingMoreStates, setLoadingMoreStates] = useState<Record<number, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const mutate = useMutation<
     ChatResponseBody,
     Error,
-    { message: string; selectedRefinements?: string[]; history?: Turn[] }
+    { message: string; selectedRefinements?: string[]; history?: Turn[]; cursor?: string; intentToken?: string }
   >({
     mutationFn: async (payload) => {
       const controller = new AbortController();
@@ -63,15 +68,53 @@ export function ChatInterface({
         clearTimeout(t);
       }
     },
-    onSuccess: (data) => {
-      const assistant: Turn = {
-        role: "assistant",
-        content: data.reply,
-        products: data.products,
-        refineChips: data.refineChips,
-      };
-      setTurns((t) => [...t, assistant]);
-      setLastRefine(data.refineChips);
+    onSuccess: (data, variables) => {
+      // If this is load more (cursor provided), append to existing turn
+      if (variables.cursor) {
+        setTurns((prevTurns) => {
+          const lastTurnIndex = prevTurns.length - 1;
+          if (lastTurnIndex >= 0 && prevTurns[lastTurnIndex].role === "assistant") {
+            const updatedTurn = {
+              ...prevTurns[lastTurnIndex],
+              products: [...(prevTurns[lastTurnIndex].products || []), ...data.products],
+              pageInfo: data.pageInfo,
+              meta: data.meta,
+            };
+            return [...prevTurns.slice(0, lastTurnIndex), updatedTurn];
+          }
+          return prevTurns;
+        });
+        // Clear loading more state and announce results
+        setLoadingMoreStates((prev) => {
+          const updated = { ...prev };
+          const turnIndex = turns.length - 1;
+          delete updated[turnIndex];
+          return updated;
+        });
+
+        // Announce loaded results for screen readers
+        const announcement = `Loaded ${data.products.length} more results`;
+        const announcer = document.createElement('div');
+        announcer.setAttribute('aria-live', 'polite');
+        announcer.setAttribute('aria-atomic', 'true');
+        announcer.className = 'sr-only';
+        announcer.textContent = announcement;
+        document.body.appendChild(announcer);
+        setTimeout(() => document.body.removeChild(announcer), 1000);
+      } else {
+        // New conversation turn
+        const assistant: Turn = {
+          role: "assistant",
+          content: data.reply,
+          products: data.products,
+          refineChips: data.refineChips,
+          pageInfo: data.pageInfo,
+          meta: data.meta,
+          query: variables.message,
+        };
+        setTurns((t) => [...t, assistant]);
+        setLastRefine(data.refineChips);
+      }
     },
     onError: () => {
       const assistant: Turn = {
@@ -110,6 +153,40 @@ export function ChatInterface({
     handleSend(next, [chip]);
   };
 
+  const handleLoadMore = (turnIndex: number, turn: Turn) => {
+    if (!turn.pageInfo?.nextCursor || !turn.query || mutate.isPending || loadingMoreStates[turnIndex]) {
+      return;
+    }
+
+    // Set loading state for this turn
+    setLoadingMoreStates((prev) => ({ ...prev, [turnIndex]: true }));
+
+    mutate.mutate({
+      message: turn.query,
+      cursor: turn.pageInfo.nextCursor,
+      intentToken: turn.meta?.intentToken,
+      history: turns.slice(0, turnIndex),
+    });
+  };
+
+  const handleEmptyStateSuggestion = (suggestion: string) => {
+    setInput(suggestion);
+    handleSend(suggestion);
+  };
+
+  const handleTryBroaderSearch = (originalQuery: string) => {
+    // Create a simpler version of the query
+    const broaderQuery = originalQuery
+      .replace(/under.*\$?[\d,]+/gi, '') // Remove budget constraints
+      .replace(/specific|exactly|perfect|best/gi, '') // Remove exactness words
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const finalQuery = broaderQuery || 'gifts';
+    setInput(finalQuery);
+    handleSend(finalQuery);
+  };
+
   const placeholder = useMemo(
     () =>
       "Try: gifts for sister who loves cooking under $50, or: birthday ideas for gym lover",
@@ -131,12 +208,50 @@ export function ChatInterface({
         className="flex-1 space-y-4 overflow-y-auto px-5 py-4"
       >
         {turns.map((t, i) => (
-          <ChatMessage
-            key={i}
-            role={t.role}
-            content={t.content}
-            products={t.products}
-          />
+          <div key={i}>
+            <ChatMessage
+              role={t.role}
+              content={t.content}
+              products={t.products}
+            />
+            {/* Handle empty state for assistant turns with zero products */}
+            {t.role === "assistant" && t.pageInfo?.total === 0 && t.query && (
+              <div className="mt-4">
+                <EmptyState
+                  queryText={t.query}
+                  onSuggestionClick={handleEmptyStateSuggestion}
+                  onTryBroaderSearch={() => handleTryBroaderSearch(t.query || '')}
+                />
+              </div>
+            )}
+            {/* Load More button for assistant turns with more results */}
+            {t.role === "assistant" && t.pageInfo?.nextCursor && (t.products?.length || 0) > 0 && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => handleLoadMore(i, t)}
+                  disabled={loadingMoreStates[i] || mutate.isPending}
+                  aria-busy={loadingMoreStates[i]}
+                  className="rounded-full px-6"
+                >
+                  {loadingMoreStates[i] ? (
+                    <>
+                      <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Loading more...
+                    </>
+                  ) : (
+                    `Load more (${t.pageInfo.total - (t.products?.length || 0)} more available)`
+                  )}
+                </Button>
+              </div>
+            )}
+            {/* Accessibility announcement for loaded results */}
+            {loadingMoreStates[i] && (
+              <div aria-live="polite" className="sr-only">
+                Loading more results...
+              </div>
+            )}
+          </div>
         ))}
         {!turns.some((t) => t.role === "user") && (
           <div className="rounded-xl border bg-[#DBEBFF]/70 p-3">
