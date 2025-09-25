@@ -18,7 +18,7 @@ function getCache<T = any>(key: string): T | null {
   return hit.data as T;
 }
 
-export const getHome: RequestHandler = async (_req, res) => {
+export const getHome = async (_req: any, res: any) => {
   const key = "home";
   const hit = getCache(key);
   if (hit) return res.json(hit);
@@ -36,7 +36,7 @@ export const getHome: RequestHandler = async (_req, res) => {
   return res.json(data || null);
 };
 
-export const getBySlug: RequestHandler = async (req, res) => {
+export const getBySlug = async (req: any, res: any) => {
   const { slug } = req.params as { slug: string };
   const key = `slug:${slug}`;
   const hit = getCache(key);
@@ -56,7 +56,7 @@ export const getBySlug: RequestHandler = async (req, res) => {
   return res.json(data || null);
 };
 
-export const refreshAll: RequestHandler = async (_req, res) => {
+export const refreshAll = async (_req: any, res: any) => {
   // Warm cache for home and all published pages
   const sb = getSupabaseAdmin();
   if (!sb) return res.status(500).json({ error: "No Supabase config" });

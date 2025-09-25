@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 let cached: { at: number; data: any[] } | null = null;
 const TTL_MS = 1000 * 60 * 5; // 5 minutes
 
-export const getNavLinks: RequestHandler = async (_req, res) => {
+export const getNavLinks = async (_req: any, res: any) => {
   try {
     if (cached && Date.now() - cached.at < TTL_MS) {
       return res.json({ links: cached.data });

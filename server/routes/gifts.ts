@@ -5,7 +5,7 @@ import { searchProducts } from "../services/algolia";
 import { logChatEvent } from "../services/telemetry";
 import { randomUUID } from "crypto";
 
-export const handleChat: RequestHandler = async (req, res) => {
+export const handleChat = async (req: any, res: any) => {
   try {
     const started = Date.now();
     let bodyAny: any = req.body;
