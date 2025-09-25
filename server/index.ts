@@ -87,6 +87,17 @@ export function createServer() {
     res.json({ message: ping });
   });
 
+  map("get", "/api/debug/env", (_req, res) => {
+    res.json({
+      hasSupabaseUrl: !!process.env.SUPABASE_URL,
+      hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE,
+      hasOpenAI: !!process.env.OPENAI_API_KEY,
+      hasAlgolia: !!process.env.ALGOLIA_APP_ID,
+      nodeEnv: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    });
+  });
+
   map("get", "/api/demo", handleDemo);
 
   // Nav links
