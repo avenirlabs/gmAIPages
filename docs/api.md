@@ -27,8 +27,39 @@ GET /api/nav/links
 
 ## Chat (AI Gifts)
 POST /api/gifts/chat
-- Body: { message: string, selectedRefinements?: string[], history?: ChatTurn[], cursor?: string, page?: number, perPage?: number, intentToken?: string }
-- 200 { reply, products: ProductItem[], refineChips: string[], pageInfo: PageInfo, meta?: { queryLatencyMs: number, source: 'algolia', intentToken?: string } }
+
+**Request Body:**
+```typescript
+{
+  message: string;                    // User's search query
+  selectedRefinements?: string[];     // Legacy chip selection (deprecated)
+  history?: ChatTurn[];              // Conversation context
+  cursor?: string;                   // Pagination cursor
+  page?: number;                     // Page number (alternative to cursor)
+  perPage?: number;                  // Results per page
+  intentToken?: string;              // Cached intent for performance
+  filters?: GiftFilters;             // Structured facet filters (NEW)
+}
+```
+
+**Response:**
+```typescript
+{
+  reply: string;                     // AI assistant response
+  products: ProductItem[];           // Search results
+  refineChips: string[];            // Suggested refinement chips
+  pageInfo: PageInfo;               // Pagination metadata
+  facets?: FacetCounts;             // Live facet counts (NEW)
+  appliedFilters?: GiftFilters;     // Echo of applied filters (NEW)
+  meta?: {
+    queryLatencyMs: number;         // Search latency
+    source: 'algolia';
+    intentToken?: string;           // Token for subsequent pages
+    broadened?: boolean;            // True if results were broadened (NEW)
+  };
+}
+```
+
 - Fallback endpoints also accepted: /.netlify/functions/api/gifts/chat or /gifts/chat
 
 **Pagination Support:**
@@ -37,7 +68,29 @@ POST /api/gifts/chat
 - `perPage`: Results per page (default: 12, configurable via CHAT_PAGE_SIZE)
 - `intentToken`: Reuse parsed intent for subsequent pages (performance optimization)
 
-**Response Structure:**
+**Filter Types (New):**
+```typescript
+interface GiftFilters {
+  relationships?: string[];   // ["dad", "mom", "sister", ...]
+  occasions?: string[];       // ["birthday", "anniversary", ...]
+  categories?: string[];      // ["tech", "cooking", "gym", ...]
+  priceBuckets?: string[];    // ["under-499", "500-999", ...]
+  priceRange?: {              // Alternative to price buckets
+    min?: number;
+    max?: number;
+  };
+  soft?: boolean;             // Use soft filtering (boost vs strict)
+}
+
+interface FacetCounts {
+  relationship?: Record<string, number>;  // "dad": 123
+  occasion?: Record<string, number>;      // "birthday": 456
+  price_bucket?: Record<string, number>;  // "under-499": 789
+  categories?: Record<string, number>;    // "tech": 321
+}
+```
+
+**Pagination Structure:**
 ```typescript
 interface PageInfo {
   total: number;           // Total number of results available
@@ -64,6 +117,36 @@ Load more (using cursor):
 curl -sS -X POST \
   -H 'Content-Type: application/json' \
   -d '{"message":"gifts for sister who loves cooking under $50","cursor":"page:2","intentToken":"eyJ..."}' \
+  https://<your-site>/api/gifts/chat
+```
+
+With facet filters (strict):
+```bash
+curl -sS -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "message": "birthday gifts",
+    "filters": {
+      "relationships": ["sister"],
+      "occasions": ["birthday"],
+      "priceBuckets": ["under-499", "500-999"],
+      "soft": false
+    }
+  }' \
+  https://<your-site>/api/gifts/chat
+```
+
+With soft filters (broadening):
+```bash
+curl -sS -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "message": "tech gifts",
+    "filters": {
+      "categories": ["tech", "gadget"],
+      "soft": true
+    }
+  }' \
   https://<your-site>/api/gifts/chat
 ```
 
