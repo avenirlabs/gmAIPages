@@ -39,7 +39,7 @@ function mapProducts(data: WCProduct[]) {
   }));
 }
 
-export async function getProducts(req: Request, res: Response) {
+export async function getProducts(req: any, res: any) {
   try {
     const base = (process.env.WOOCOMMERCE_BASE_URL || "").replace(/\/+$/, "");
     const key = process.env.WOOCOMMERCE_CONSUMER_KEY;
@@ -140,7 +140,7 @@ export async function getProducts(req: Request, res: Response) {
   }
 }
 
-export async function getFeaturedProducts(_req: Request, res: Response) {
+export async function getFeaturedProducts(_req: any, res: any) {
   // Back-compat: delegate to generic route
   return getProducts(
     { query: { source: "featured", per_page: "20" } } as any,
