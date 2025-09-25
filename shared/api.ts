@@ -42,6 +42,22 @@ export interface PageInfo {
   totalPages?: number;
 }
 
+export type GiftFilters = {
+  relationships?: string[];   // ["dad","mom"]
+  occasions?: string[];       // ["birthday","anniversary"]
+  categories?: string[];      // "Gifts > For Dad" or canonical slugs
+  priceBuckets?: string[];    // ["under-499","500-999",...]
+  priceRange?: { min?: number; max?: number }; // optional numeric mode
+  soft?: boolean;             // use optionalFilters boosting instead of hard facetFilters
+};
+
+export type FacetCounts = {
+  relationship?: Record<string, number>;
+  occasion?: Record<string, number>;
+  price_bucket?: Record<string, number>;
+  categories?: Record<string, number>; // optional if using hierarchical
+};
+
 export interface ChatRequestBody {
   message: string;
   history?: ChatTurn[];
@@ -50,6 +66,7 @@ export interface ChatRequestBody {
   page?: number;
   perPage?: number;
   intentToken?: string;
+  filters?: GiftFilters;
 }
 
 export interface ChatResponseBody {
@@ -57,9 +74,12 @@ export interface ChatResponseBody {
   products: ProductItem[];
   refineChips: string[];
   pageInfo: PageInfo;
+  facets?: FacetCounts;
+  appliedFilters?: GiftFilters;
   meta?: {
     queryLatencyMs: number;
     source: 'algolia';
     intentToken?: string;
+    broadened?: boolean;
   };
 }
