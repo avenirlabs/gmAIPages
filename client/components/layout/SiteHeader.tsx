@@ -1,29 +1,58 @@
 import { useEffect, useState } from "react";
+import { NavMenu } from "./NavMenu";
 
-interface NavLink {
+interface LegacyNavLink {
   label: string;
   href: string;
   position: number;
 }
-const FALLBACK_LINKS: NavLink[] = [
-  { label: "Home", href: "/", position: 0 },
-  { label: "Diwali Gifts", href: "/diwali", position: 1 },
-  { label: "Anniversary", href: "/anniversary", position: 2 },
-  { label: "Gifts for Father", href: "/gifts-for-father", position: 3 },
-  { label: "Admin", href: "/admin", position: 999 },
+
+interface NavLink {
+  id: string;
+  label: string;
+  href?: string;
+  children?: NavLink[];
+  isMega?: boolean;
+}
+
+interface NavResponse {
+  links: LegacyNavLink[]; // Legacy format for backward compatibility
+  items: NavLink[];      // New nested format
+}
+
+const FALLBACK_ITEMS: NavLink[] = [
+  { id: "home", label: "Home", href: "/" },
+  { id: "diwali", label: "Diwali Gifts", href: "/diwali" },
+  { id: "anniversary", label: "Anniversary", href: "/anniversary" },
+  { id: "father", label: "Gifts for Father", href: "/gifts-for-father" },
+  { id: "admin", label: "Admin", href: "/admin" },
 ];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const [links, setLinks] = useState<NavLink[]>(FALLBACK_LINKS);
+  const [navItems, setNavItems] = useState<NavLink[]>(FALLBACK_ITEMS);
 
   useEffect(() => {
     const ac = new AbortController();
     fetch("/api/nav/links", { signal: ac.signal })
       .then(async (r) => (r.ok ? r.json() : Promise.reject(await r.text())))
-      .then((d) => {
-        const list = (d?.links as NavLink[]) || [];
-        if (list.length) setLinks(list);
+      .then((d: NavResponse) => {
+        // Use new nested format if available, otherwise fallback to legacy
+        const items = d?.items || [];
+        if (items.length) {
+          setNavItems(items);
+        } else {
+          // Convert legacy format to new format
+          const legacyLinks = d?.links || [];
+          if (legacyLinks.length) {
+            const convertedItems: NavLink[] = legacyLinks.map((link, index) => ({
+              id: link.label.toLowerCase().replace(/\s+/g, '-'),
+              label: link.label,
+              href: link.href === "#" ? undefined : link.href,
+            }));
+            setNavItems(convertedItems);
+          }
+        }
       })
       .catch(() => {})
       .finally(() => {});
@@ -42,17 +71,7 @@ export function SiteHeader() {
             />
           </a>
 
-          <nav className="ml-2 hidden items-center gap-6 md:flex">
-            {links.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                className="text-sm font-medium text-[#155ca5] hover:underline"
-              >
-                {l.label}
-              </a>
-            ))}
-          </nav>
+          <NavMenu items={navItems} className="ml-2" />
 
           <button
             aria-label="Open menu"
@@ -79,17 +98,8 @@ export function SiteHeader() {
 
       {open ? (
         <div className="border-t bg-white md:hidden">
-          <div className="container mx-auto flex flex-col px-4 py-2">
-            {links.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className="rounded-md px-2 py-2 text-sm font-medium text-[#155ca5] hover:bg-[#DBEBFF]"
-              >
-                {l.label}
-              </a>
-            ))}
+          <div className="container mx-auto px-4 py-2">
+            <NavMenu items={navItems} onNavigate={() => setOpen(false)} />
           </div>
         </div>
       ) : null}
