@@ -32,7 +32,7 @@ function mapProducts(data: WCProduct[]) {
     id: p.id,
     name: p.name,
     link: p.permalink,
-    image: p.images && p.images.length ? p.images[0].src : undefined,
+    image: p.images && p.images.length ? p.images[0]!.src : undefined,
     price: p.price ? parseFloat(p.price) : undefined,
     regular_price: p.regular_price ? parseFloat(p.regular_price) : undefined,
     sale_price: p.sale_price ? parseFloat(p.sale_price) : undefined,
@@ -46,8 +46,7 @@ export async function getProducts(req: Request, res: Response) {
     const secret = process.env.WOOCOMMERCE_CONSUMER_SECRET;
 
     if (!base || !key || !secret) {
-      res.status(500).json({ error: "WooCommerce credentials not configured" });
-      return;
+      return res.status(500).json({ error: "WooCommerce credentials not configured" });
     }
 
     const { z } = await import("zod");
@@ -69,8 +68,7 @@ export async function getProducts(req: Request, res: Response) {
     if (hit && Date.now() - hit.at < TTL_MS) {
       const inm = req.headers["if-none-match"];
       if (inm && inm === hit.etag) {
-        res.status(304).end();
-        return;
+        return res.status(304).end();
       }
       res.setHeader("ETag", hit.etag);
       res.setHeader("Cache-Control", "public, max-age=300");
@@ -85,8 +83,8 @@ export async function getProducts(req: Request, res: Response) {
         "_fields",
         "id,name,permalink,images,price,regular_price,sale_price",
       );
-      url.searchParams.set("consumer_key", key);
-      url.searchParams.set("consumer_secret", secret);
+      url.searchParams.set("consumer_key", key!);
+      url.searchParams.set("consumer_secret", secret!);
 
       if (qp.source === "featured") {
         url.searchParams.set("featured", "true");
@@ -98,8 +96,8 @@ export async function getProducts(req: Request, res: Response) {
         const catUrl = new URL(base + "/wp-json/wc/v3/products/categories");
         catUrl.searchParams.set("slug", qp.category_slug);
         catUrl.searchParams.set("per_page", "1");
-        catUrl.searchParams.set("consumer_key", key);
-        catUrl.searchParams.set("consumer_secret", secret);
+        catUrl.searchParams.set("consumer_key", key!);
+        catUrl.searchParams.set("consumer_secret", secret!);
         const cr = await fetch(catUrl.toString(), {
           headers: { Accept: "application/json" },
         });
@@ -111,7 +109,7 @@ export async function getProducts(req: Request, res: Response) {
         if (!cats.length) {
           return url; // empty result
         }
-        url.searchParams.set("category", String(cats[0].id));
+        url.searchParams.set("category", String(cats[0]!.id));
       }
       return url;
     }
@@ -123,10 +121,9 @@ export async function getProducts(req: Request, res: Response) {
 
     if (!r.ok) {
       const text = await r.text();
-      res
+      return res
         .status(r.status)
         .json({ error: "WooCommerce API error", details: text });
-      return;
     }
 
     const data = (await r.json()) as WCProduct[];
@@ -137,7 +134,7 @@ export async function getProducts(req: Request, res: Response) {
     res.setHeader("Cache-Control", "public, max-age=300");
     res.json({ products });
   } catch (err: any) {
-    res
+    return res
       .status(500)
       .json({ error: "Failed to fetch products", details: err?.message });
   }
