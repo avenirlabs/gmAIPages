@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ChatMessage } from "./ChatMessage";
 import { RefinementChips } from "./RefinementChips";
+import { FacetChips } from "./FacetChips";
 import { EmptyState } from "./EmptyState";
-import type { ChatResponseBody, ProductItem, PageInfo, GiftFilters } from "@shared/api";
+import type { ChatResponseBody, ProductItem, PageInfo, GiftFilters, FacetCounts } from "@shared/api";
 import { Button } from "@/components/ui/button";
 import { StarterPrompts } from "./StarterPrompts";
 import { useGiftFilters } from "@/hooks/useGiftFilters";
@@ -34,6 +35,7 @@ export function ChatInterface({
   ]);
   const [input, setInput] = useState("");
   const [lastRefine, setLastRefine] = useState<string[]>([]);
+  const [lastFacets, setLastFacets] = useState<FacetCounts>({});
   const [loadingMoreStates, setLoadingMoreStates] = useState<Record<number, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -149,6 +151,7 @@ export function ChatInterface({
         };
         setTurns((t) => [...t, assistant]);
         setLastRefine(data.refineChips);
+        setLastFacets(data.facets || {});
       }
     },
     onError: () => {
@@ -374,12 +377,23 @@ export function ChatInterface({
           </div>
         )}
 
-        <RefinementChips
-          chips={lastRefine}
-          onSelect={handleChip}
-          activeChips={activeChips}
-          className="mb-2"
-        />
+        {/* Show facet chips with counts if facets are available */}
+        {Object.keys(lastFacets).length > 0 ? (
+          <FacetChips
+            chips={lastRefine}
+            facets={lastFacets}
+            selectedFilters={selectedFilters}
+            onToggle={handleChip}
+            className="mb-2"
+          />
+        ) : (
+          <RefinementChips
+            chips={lastRefine}
+            onSelect={handleChip}
+            activeChips={activeChips}
+            className="mb-2"
+          />
+        )}
         <div className="flex items-center gap-2">
           <input
             value={input}
