@@ -46,13 +46,44 @@ export const handleChat = async (req: any, res: any) => {
       intentToken,
     );
 
-    const searchResult = await searchProductsPaginated(
+    let searchResult = await searchProductsPaginated(
       parsed.searchQuery,
       parsed.filters,
       pageSize,
       { chips: selectedRefinements, cursor, page },
       filters,
     );
+
+    let broadened = false;
+
+    // Check if we have any active filters
+    const hasActiveFilters = Boolean(
+      filters && (
+        filters.relationships?.length ||
+        filters.occasions?.length ||
+        filters.categories?.length ||
+        filters.priceBuckets?.length ||
+        filters.priceRange
+      )
+    );
+
+    // Zero-hit fallback: if strict filters produce no results and we have filters, try soft mode
+    if (searchResult.products.length === 0 && hasActiveFilters && !cursor && !filters?.soft) {
+      const softFilters = { ...filters, soft: true };
+      const softResult = await searchProductsPaginated(
+        parsed.searchQuery,
+        parsed.filters,
+        pageSize,
+        { chips: selectedRefinements, cursor, page },
+        softFilters,
+      );
+
+      // Use soft results if they're better than zero
+      if (softResult.products.length > 0) {
+        searchResult = softResult;
+        broadened = true;
+      }
+    }
 
     const payload: ChatResponseBody = {
       reply: parsed.replyBlurb,
@@ -72,6 +103,7 @@ export const handleChat = async (req: any, res: any) => {
         queryLatencyMs: searchResult.latencyMs,
         source: 'algolia' as const,
         intentToken: parsed.intentToken,
+        broadened,
       },
     };
 
@@ -112,6 +144,7 @@ export const handleChat = async (req: any, res: any) => {
       zeroHits: searchResult.products.length === 0,
       intentTokenUsed: !!intentToken,
       appliedFilters: filters,
+      broadened,
     });
 
     console.log("/api/gifts/chat", {

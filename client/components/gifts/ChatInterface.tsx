@@ -4,6 +4,7 @@ import { ChatMessage } from "./ChatMessage";
 import { RefinementChips } from "./RefinementChips";
 import { FacetChips } from "./FacetChips";
 import { EmptyState } from "./EmptyState";
+import { BroadeningBanner } from "./BroadeningBanner";
 import type { ChatResponseBody, ProductItem, PageInfo, GiftFilters, FacetCounts } from "@shared/api";
 import { Button } from "@/components/ui/button";
 import { StarterPrompts } from "./StarterPrompts";
@@ -19,6 +20,7 @@ interface Turn {
   pageInfo?: PageInfo;
   meta?: any;
   query?: string; // Store original query for pagination
+  broadened?: boolean; // Track if results were broadened
 }
 
 export function ChatInterface({
@@ -40,7 +42,7 @@ export function ChatInterface({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Gift filter state management
-  const { selectedFilters, toggleValue, clearAll, hasFilters } = useGiftFilters();
+  const { selectedFilters, toggleValue, clearAll, hasFilters, setSoft } = useGiftFilters();
 
   // Calculate active chips for visual state
   const activeChips = useMemo(() => {
@@ -148,6 +150,7 @@ export function ChatInterface({
           pageInfo: data.pageInfo,
           meta: data.meta,
           query: variables.message,
+          broadened: data.meta?.broadened || false,
         };
         setTurns((t) => [...t, assistant]);
         setLastRefine(data.refineChips);
@@ -240,6 +243,15 @@ export function ChatInterface({
     handleSend(finalQuery);
   };
 
+  const handleRevertToStrict = () => {
+    // Set filters to strict mode and re-run last query
+    setSoft(false);
+    const lastAssistantTurn = [...turns].reverse().find(t => t.role === 'assistant' && t.query);
+    if (lastAssistantTurn?.query) {
+      handleSend(lastAssistantTurn.query);
+    }
+  };
+
   const placeholder = useMemo(
     () =>
       "Try: gifts for sister who loves cooking under $50, or: birthday ideas for gym lover",
@@ -267,6 +279,14 @@ export function ChatInterface({
               content={t.content}
               products={t.products}
             />
+            {/* Show broadening banner for assistant turns with broadened results */}
+            {t.role === "assistant" && t.broadened && (t.products?.length || 0) > 0 && (
+              <div className="mt-4">
+                <BroadeningBanner
+                  onRevertToStrict={handleRevertToStrict}
+                />
+              </div>
+            )}
             {/* Handle empty state for assistant turns with zero products */}
             {t.role === "assistant" && t.pageInfo?.total === 0 && t.query && (
               <div className="mt-4">

@@ -425,7 +425,8 @@ const handlers = {
         meta: {
           queryLatencyMs: totalLatencyMs,
           source: 'algolia',
-          intentToken: intentTokenGenerated
+          intentToken: intentTokenGenerated,
+          broadened: false // TODO: Implement zero-hit fallback in consolidated API
         }
       });
 
