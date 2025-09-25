@@ -3,9 +3,12 @@ import { useMutation } from "@tanstack/react-query";
 import { ChatMessage } from "./ChatMessage";
 import { RefinementChips } from "./RefinementChips";
 import { EmptyState } from "./EmptyState";
-import type { ChatResponseBody, ProductItem, PageInfo } from "@shared/api";
+import type { ChatResponseBody, ProductItem, PageInfo, GiftFilters } from "@shared/api";
 import { Button } from "@/components/ui/button";
 import { StarterPrompts } from "./StarterPrompts";
+import { useGiftFilters } from "@/hooks/useGiftFilters";
+import { chipToFilter, isChipActive, filterToChip } from "@/utils/chipMapping";
+import { X } from "lucide-react";
 
 interface Turn {
   role: "user" | "assistant";
@@ -34,10 +37,42 @@ export function ChatInterface({
   const [loadingMoreStates, setLoadingMoreStates] = useState<Record<number, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Gift filter state management
+  const { selectedFilters, toggleValue, clearAll, hasFilters } = useGiftFilters();
+
+  // Calculate active chips for visual state
+  const activeChips = useMemo(() => {
+    const active = new Set<string>();
+    lastRefine.forEach(chip => {
+      if (isChipActive(chip, selectedFilters)) {
+        active.add(chip);
+      }
+    });
+    return active;
+  }, [lastRefine, selectedFilters]);
+
+  // Get active filter pills for display
+  const activeFilterPills = useMemo(() => {
+    const pills: Array<{ key: keyof GiftFilters; value: string; label: string }> = [];
+
+    Object.entries(selectedFilters).forEach(([key, values]) => {
+      if (key === 'soft' || key === 'priceRange') return; // Skip these special keys
+
+      (values as string[])?.forEach(value => {
+        const label = filterToChip(key as keyof GiftFilters, value);
+        if (label) {
+          pills.push({ key: key as keyof GiftFilters, value, label });
+        }
+      });
+    });
+
+    return pills;
+  }, [selectedFilters]);
+
   const mutate = useMutation<
     ChatResponseBody,
     Error,
-    { message: string; selectedRefinements?: string[]; history?: Turn[]; cursor?: string; intentToken?: string }
+    { message: string; selectedRefinements?: string[]; history?: Turn[]; cursor?: string; intentToken?: string; filters?: GiftFilters }
   >({
     mutationFn: async (payload) => {
       const controller = new AbortController();
@@ -134,7 +169,7 @@ export function ChatInterface({
 
   const canSend = input.trim().length > 0 && !mutate.isPending;
 
-  const handleSend = (text?: string, refinements?: string[]) => {
+  const handleSend = (text?: string, refinements?: string[], resetPagination = true) => {
     const content = (text ?? input).trim();
     if (!content) return;
     const userTurn: Turn = { role: "user", content };
@@ -144,13 +179,27 @@ export function ChatInterface({
       message: content,
       selectedRefinements: refinements?.length ? refinements : undefined,
       history: turns,
+      filters: hasFilters ? selectedFilters : undefined,
     });
   };
 
   const handleChip = (chip: string) => {
-    const next = input ? `${input} ${chip}` : chip;
-    setInput(next);
-    handleSend(next, [chip]);
+    const mapping = chipToFilter(chip);
+    if (mapping) {
+      // This is a filterable chip - toggle the filter
+      toggleValue(mapping.key, mapping.value);
+
+      // If we have active filters, re-run the last query with updated filters
+      const lastAssistantTurn = [...turns].reverse().find(t => t.role === 'assistant' && t.query);
+      if (lastAssistantTurn?.query) {
+        handleSend(lastAssistantTurn.query);
+      }
+    } else {
+      // Fallback to old behavior for non-filterable chips
+      const next = input ? `${input} ${chip}` : chip;
+      setInput(next);
+      handleSend(next, [chip]);
+    }
   };
 
   const handleLoadMore = (turnIndex: number, turn: Turn) => {
@@ -166,6 +215,7 @@ export function ChatInterface({
       cursor: turn.pageInfo.nextCursor,
       intentToken: turn.meta?.intentToken,
       history: turns.slice(0, turnIndex),
+      filters: hasFilters ? selectedFilters : undefined,
     });
   };
 
@@ -283,9 +333,51 @@ export function ChatInterface({
       </div>
 
       <div className="border-t p-4">
+        {/* Active filters bar */}
+        {activeFilterPills.length > 0 && (
+          <div className="mb-3 rounded-lg border bg-slate-50/50 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-600">Active Filters:</span>
+              <button
+                onClick={() => {
+                  clearAll();
+                  // Re-run last query without filters
+                  const lastAssistantTurn = [...turns].reverse().find(t => t.role === 'assistant' && t.query);
+                  if (lastAssistantTurn?.query) {
+                    handleSend(lastAssistantTurn.query);
+                  }
+                }}
+                className="text-xs text-slate-500 hover:text-slate-700 underline"
+              >
+                Clear all
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {activeFilterPills.map(pill => (
+                <button
+                  key={`${pill.key}-${pill.value}`}
+                  onClick={() => {
+                    toggleValue(pill.key, pill.value);
+                    // Re-run last query with updated filters
+                    const lastAssistantTurn = [...turns].reverse().find(t => t.role === 'assistant' && t.query);
+                    if (lastAssistantTurn?.query) {
+                      handleSend(lastAssistantTurn.query);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full bg-[#155ca5] px-2 py-1 text-xs font-medium text-white hover:bg-[#134a93] transition"
+                >
+                  {pill.label}
+                  <X size={12} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <RefinementChips
           chips={lastRefine}
           onSelect={handleChip}
+          activeChips={activeChips}
           className="mb-2"
         />
         <div className="flex items-center gap-2">
