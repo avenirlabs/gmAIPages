@@ -56,7 +56,7 @@ export default function Index() {
           </p>
         </section>
 
-        <section className="mx-auto w-full max-w-5xl px-2 sm:px-0">
+        <section className="w-full">
           <ChatInterface starterPrompts={home?.chips} />
         </section>
 

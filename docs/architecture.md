@@ -86,3 +86,27 @@ The gift recommendation system combines AI intent parsing with faceted search fo
 - **docs/search.md**: Comprehensive faceting guide with Algolia configuration
 - **netlify/functions/api.ts**: serverless entry
 - **netlify.toml**: build, redirects, headers (CSP)
+
+## UI Layout Conventions
+
+### Responsive Container Pattern
+
+The application uses a responsive container pattern for optimal readability and visual hierarchy:
+
+#### Chat Interface Layout
+- **Full-width sections**: Chat interface spans the entire page width for immersive experience
+- **Readable message column**: Text content constrained to `max-w-[78ch]` (approximately 78 characters) for optimal reading
+- **Wide product grids**: Product results utilize full available width with responsive breakpoints:
+  - Mobile: 2 columns (`grid-cols-2`)
+  - Small: 3 columns (`sm:grid-cols-3`)
+  - Medium: 4 columns (`md:grid-cols-4`)
+  - Large: 5 columns (`lg:grid-cols-5`)
+  - Extra Large: 6 columns (`xl:grid-cols-6`)
+
+#### Container Guidelines
+- **Text content**: Use `max-w-[78ch]` for optimal readability (45-75 characters per line)
+- **Interactive elements**: Constrain to `max-w-4xl` for comfortable interaction zones
+- **Media content**: Allow full-width expansion with appropriate padding (`px-4` minimum)
+- **Navigation**: Full-width with centered content containers
+
+This pattern ensures content remains readable while maximizing screen real estate for visual elements like product grids and media.
