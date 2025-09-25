@@ -1,5 +1,5 @@
 // Simple ping endpoint
-module.exports = (req, res) => {
+export default function handler(req, res) {
   try {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,4 +24,4 @@ module.exports = (req, res) => {
       message: error.message || String(error)
     });
   }
-};
+}
