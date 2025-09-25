@@ -24,6 +24,9 @@ interface LogChatParams {
   zeroHits?: boolean;
   fallbackSuggestions?: string[];
   intentTokenUsed?: boolean;
+  // Facet filters
+  appliedFilters?: any; // GiftFilters object
+  broadened?: boolean;
 }
 
 export async function logChatEvent(params: LogChatParams) {
@@ -68,6 +71,8 @@ export async function logChatEvent(params: LogChatParams) {
       zero_hits: params.zeroHits || false,
       fallback_suggestions: params.fallbackSuggestions,
       intent_token_used: params.intentTokenUsed || false,
+      applied_filters: params.appliedFilters ? JSON.stringify(params.appliedFilters) : null,
+      broadened: params.broadened || false,
     });
   } catch (e) {
     // best-effort only

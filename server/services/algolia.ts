@@ -1,4 +1,4 @@
-import type { ProductItem } from "@shared/api";
+import type { ProductItem, GiftFilters, FacetCounts } from "@shared/api";
 
 let client: any = null;
 
@@ -97,6 +97,98 @@ function weightedScore(
   return 0.5 * relScore + 0.3 * intScore + 0.2 * occScore;
 }
 
+function buildAlgoliaParams(
+  filters: GiftFilters | undefined
+): Pick<any, "facetFilters" | "numericFilters" | "optionalFilters" | "facets" | "sumOrFiltersScores"> {
+  if (!filters) {
+    return {
+      facets: ["relationship", "occasion", "price_bucket"]
+    };
+  }
+
+  const params: any = {
+    facets: ["relationship", "occasion", "price_bucket"]
+  };
+
+  // Build facet/optional filters
+  const facetFilters: string[][] = [];
+  const optionalFilters: Array<{ facet: string; score: number }> = [];
+
+  // Handle relationships
+  if (filters.relationships?.length) {
+    const relationshipFilters = filters.relationships.map(r => `relationship:${r.toLowerCase()}`);
+    if (filters.soft) {
+      relationshipFilters.forEach(filter => {
+        optionalFilters.push({ facet: filter, score: 3 });
+      });
+    } else {
+      facetFilters.push(relationshipFilters);
+    }
+  }
+
+  // Handle occasions
+  if (filters.occasions?.length) {
+    const occasionFilters = filters.occasions.map(o => `occasion:${o.toLowerCase()}`);
+    if (filters.soft) {
+      occasionFilters.forEach(filter => {
+        optionalFilters.push({ facet: filter, score: 2 });
+      });
+    } else {
+      facetFilters.push(occasionFilters);
+    }
+  }
+
+  // Handle categories
+  if (filters.categories?.length) {
+    const categoryFilters = filters.categories.map(c => `categories:${c}`);
+    if (filters.soft) {
+      categoryFilters.forEach(filter => {
+        optionalFilters.push({ facet: filter, score: 1 });
+      });
+    } else {
+      facetFilters.push(categoryFilters);
+    }
+  }
+
+  // Handle price buckets
+  if (filters.priceBuckets?.length) {
+    const priceFilters = filters.priceBuckets.map(p => `price_bucket:${p}`);
+    if (filters.soft) {
+      priceFilters.forEach(filter => {
+        optionalFilters.push({ facet: filter, score: 1 });
+      });
+    } else {
+      facetFilters.push(priceFilters);
+    }
+  }
+
+  // Handle price range (takes precedence over price buckets)
+  if (filters.priceRange) {
+    const numericFilters: string[] = [];
+    if (filters.priceRange.min !== undefined) {
+      numericFilters.push(`price >= ${filters.priceRange.min}`);
+    }
+    if (filters.priceRange.max !== undefined) {
+      numericFilters.push(`price <= ${filters.priceRange.max}`);
+    }
+    if (numericFilters.length) {
+      params.numericFilters = numericFilters;
+    }
+  }
+
+  // Apply filters
+  if (facetFilters.length) {
+    params.facetFilters = facetFilters;
+  }
+
+  if (optionalFilters.length) {
+    params.optionalFilters = optionalFilters;
+    params.sumOrFiltersScores = true;
+  }
+
+  return params;
+}
+
 async function getClient(): Promise<any> {
   const appId = process.env.ALGOLIA_APP_ID;
   const apiKey = process.env.ALGOLIA_API_KEY;
@@ -117,6 +209,7 @@ export interface AlgoliaSearchResult {
   prevCursor?: string;
   page: number;
   totalPages: number;
+  facets?: FacetCounts;
 }
 
 export async function searchProductsPaginated(
@@ -124,6 +217,7 @@ export async function searchProductsPaginated(
   filters: string[] = [],
   limit = 12,
   context?: { chips?: string[]; page?: number; cursor?: string },
+  giftFilters?: GiftFilters,
 ): Promise<AlgoliaSearchResult> {
   const c = await getClient();
   const indexName = process.env.ALGOLIA_INDEX_NAME;
@@ -148,7 +242,8 @@ export async function searchProductsPaginated(
     currentPage = context.page;
   }
 
-  const facetFilters = filters.filter((f) => /.+:.+/.test(f)).map((f) => [f]);
+  // Legacy filter support
+  const legacyFacetFilters = filters.filter((f) => /.+:.+/.test(f)).map((f) => [f]);
   const extraKeywords = filters.filter((f) => !/.+:.+/.test(f)).join(" ");
   const chipKeywords = (context?.chips ?? []).join(" ");
   const combinedQuery = [query, extraKeywords, chipKeywords]
@@ -156,30 +251,43 @@ export async function searchProductsPaginated(
     .join(" ");
   const signals = extractSignals(combinedQuery);
 
+  // Build Algolia params from gift filters
+  const algoliaParams = buildAlgoliaParams(giftFilters);
+
   try {
     const { withTimeout } = await import("../utils/async.js");
     const startTime = Date.now();
+    const searchParams: any = {
+      query: combinedQuery,
+      hitsPerPage: limit,
+      page: currentPage - 1, // Algolia uses 0-based pages
+      attributesToRetrieve: [
+        "objectID",
+        "title",
+        "name",
+        "description",
+        "price",
+        "currency",
+        "image",
+        "url",
+        "tags",
+        "vendor",
+        "relationship", // Added for faceting
+        "occasion", // Added for faceting
+        "price_bucket", // Added for faceting
+      ],
+      ...algoliaParams,
+    };
+
+    // Combine with legacy facet filters if no gift filters are provided
+    if (!giftFilters && legacyFacetFilters.length) {
+      searchParams.facetFilters = legacyFacetFilters;
+    }
+
     const res = await withTimeout(
       c.searchSingleIndex({
         indexName,
-        searchParams: {
-          query: combinedQuery,
-          hitsPerPage: limit,
-          page: currentPage - 1, // Algolia uses 0-based pages
-          attributesToRetrieve: [
-            "objectID",
-            "title",
-            "name",
-            "description",
-            "price",
-            "currency",
-            "image",
-            "url",
-            "tags",
-            "vendor",
-          ],
-          facetFilters: facetFilters.length ? (facetFilters as any) : undefined,
-        },
+        searchParams,
       }),
       3500,
       async () => ({ hits: [], nbHits: 0, processingTimeMS: 0 }) as any,
@@ -190,13 +298,32 @@ export async function searchProductsPaginated(
     const searchLatency = (res as any).processingTimeMS ?? 0;
     const totalLatencyMs = Date.now() - startTime;
 
+    // Extract facet counts
+    const facets: FacetCounts = {};
+    if ((res as any).facets) {
+      const algoliaFacets = (res as any).facets;
+      if (algoliaFacets.relationship) {
+        facets.relationship = algoliaFacets.relationship;
+      }
+      if (algoliaFacets.occasion) {
+        facets.occasion = algoliaFacets.occasion;
+      }
+      if (algoliaFacets.price_bucket) {
+        facets.price_bucket = algoliaFacets.price_bucket;
+      }
+      if (algoliaFacets.categories) {
+        facets.categories = algoliaFacets.categories;
+      }
+    }
+
     if (!hits.length) {
       return {
         products: [],
         total,
         latencyMs: totalLatencyMs,
         page: currentPage,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
+        facets
       };
     }
 
@@ -231,6 +358,7 @@ export async function searchProductsPaginated(
       latencyMs: totalLatencyMs,
       page: currentPage,
       totalPages,
+      facets,
       ...(hasNext && { nextCursor: `page:${currentPage + 1}` }),
       ...(hasPrev && { prevCursor: `page:${currentPage - 1}` })
     };
@@ -241,7 +369,8 @@ export async function searchProductsPaginated(
       total: 0,
       latencyMs: 0,
       page: currentPage,
-      totalPages: 0
+      totalPages: 0,
+      facets: {}
     };
   }
 }

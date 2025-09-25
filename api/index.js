@@ -281,7 +281,8 @@ const handlers = {
         cursor,
         page,
         perPage,
-        intentToken
+        intentToken,
+        filters
       } = bodyData || {};
       const searchQuery = query || message;
 
@@ -419,6 +420,8 @@ const handlers = {
         products,
         refineChips,
         pageInfo,
+        appliedFilters: filters, // Echo applied filters
+        facets: {}, // Empty for now - will be populated when Algolia index has facet fields
         meta: {
           queryLatencyMs: totalLatencyMs,
           source: 'algolia',

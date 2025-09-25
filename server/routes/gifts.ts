@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import type { ChatRequestBody, ChatResponseBody } from "@shared/api";
-import { parseUserQueryWithOpenAI } from "../services/openai";
-import { searchProducts } from "../services/algolia";
+import { parseUserQueryWithIntentToken } from "../services/openai";
+import { searchProductsPaginated } from "../services/algolia";
 import { logChatEvent } from "../services/telemetry";
 import { randomUUID } from "crypto";
 
@@ -23,28 +23,56 @@ export const handleChat = async (req: any, res: any) => {
       bodyAny && typeof bodyAny === "object"
         ? (bodyAny as any)
         : { message: "" };
-    const { message, selectedRefinements = [], history = [] } = body;
+    const {
+      message,
+      selectedRefinements = [],
+      history = [],
+      filters,
+      cursor,
+      page,
+      perPage,
+      intentToken
+    } = body;
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "Missing message" });
     }
 
-    const parsed = await parseUserQueryWithOpenAI(
+    const pageSize = perPage || parseInt(process.env.CHAT_PAGE_SIZE || "12");
+
+    const parsed = await parseUserQueryWithIntentToken(
       message,
       selectedRefinements,
       history,
+      intentToken,
     );
 
-    const products = await searchProducts(
+    const searchResult = await searchProductsPaginated(
       parsed.searchQuery,
       parsed.filters,
-      12,
-      { chips: selectedRefinements },
+      pageSize,
+      { chips: selectedRefinements, cursor, page },
+      filters,
     );
 
     const payload: ChatResponseBody = {
       reply: parsed.replyBlurb,
-      products,
+      products: searchResult.products,
       refineChips: parsed.refineChips,
+      pageInfo: {
+        total: searchResult.total,
+        pageSize,
+        page: searchResult.page,
+        totalPages: searchResult.totalPages,
+        nextCursor: searchResult.nextCursor,
+        prevCursor: searchResult.prevCursor,
+      },
+      facets: searchResult.facets,
+      appliedFilters: filters,
+      meta: {
+        queryLatencyMs: searchResult.latencyMs,
+        source: 'algolia' as const,
+        intentToken: parsed.intentToken,
+      },
     };
 
     const latency = Date.now() - started;
@@ -68,14 +96,22 @@ export const handleChat = async (req: any, res: any) => {
       algoliaQuery: parsed.searchQuery,
       chips: payload.refineChips,
       filters: parsed.filters,
-      productsCount: products.length,
-      productIds: products.map((p) => p.id),
+      productsCount: searchResult.products.length,
+      productIds: searchResult.products.map((p) => p.id),
       latencyMs: latency,
       userId,
       ip,
       ua,
       country,
       city,
+      page: searchResult.page,
+      pageSize,
+      totalResults: searchResult.total,
+      nextCursorExists: !!searchResult.nextCursor,
+      returnedCount: searchResult.products.length,
+      zeroHits: searchResult.products.length === 0,
+      intentTokenUsed: !!intentToken,
+      appliedFilters: filters,
     });
 
     console.log("/api/gifts/chat", {
