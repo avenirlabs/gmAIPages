@@ -271,16 +271,19 @@ const handlers = {
         }
       }
 
-      const { query, sessionId } = bodyData || {};
+      // Handle both query and message formats
+      const { query, message, sessionId, history, selectedRefinements } = bodyData || {};
+      const searchQuery = query || message;
 
-      if (!query || typeof query !== "string" || query.trim().length === 0) {
+      if (!searchQuery || typeof searchQuery !== "string" || searchQuery.trim().length === 0) {
         return res.status(400).json({
-          error: "Missing or invalid query parameter",
+          error: "Missing or invalid query/message parameter",
           receivedBody: bodyData,
-          expectedFormat: "{ \"query\": \"your search term\" }",
+          expectedFormat: "{ \"message\": \"your search term\" } or { \"query\": \"your search term\" }",
           debug: {
             hasQuery: !!query,
-            queryType: typeof query,
+            hasMessage: !!message,
+            queryType: typeof searchQuery,
             bodyType: typeof bodyData,
             bodyKeys: bodyData ? Object.keys(bodyData) : []
           }
@@ -297,30 +300,51 @@ const handlers = {
         try {
           const indexName = process.env.ALGOLIA_INDEX_NAME || 'gmProducts';
           const index = client.initIndex(indexName);
-          const { hits } = await index.search(query.trim(), { hitsPerPage: 12 });
+          const { hits } = await index.search(searchQuery.trim(), { hitsPerPage: 12 });
 
           products = hits.map(hit => ({
             id: hit.objectID || hit.id,
-            name: hit.name || hit.title,
-            link: hit.link || hit.url,
-            image: hit.image,
+            title: hit.name || hit.title,
+            description: hit.description,
             price: hit.price,
-            regular_price: hit.regular_price,
-            sale_price: hit.sale_price,
+            currency: 'USD',
+            image: hit.image,
+            url: hit.link || hit.url,
+            tags: hit.tags || [],
+            vendor: hit.vendor,
+            score: hit._score
           }));
         } catch (searchError) {
           console.error('Algolia search error:', searchError);
         }
       }
 
-      return res.json({
-        sessionId: actualSessionId,
-        query: query.trim(),
-        products,
-        metadata: {
-          timestamp: new Date().toISOString(),
-          productCount: products.length
+      // Generate refinement chips based on search results
+      const refineChips = [];
+      if (products.length > 0) {
+        // Extract unique categories/tags from products for refinement
+        const allTags = products.flatMap(p => p.tags || []);
+        const uniqueTags = [...new Set(allTags)].slice(0, 5);
+        refineChips.push(...uniqueTags);
+
+        // Add price range suggestions
+        const prices = products.filter(p => p.price).map(p => p.price);
+        if (prices.length > 0) {
+          const maxPrice = Math.max(...prices);
+          if (maxPrice > 50) refineChips.push("under $50");
+          if (maxPrice > 100) refineChips.push("under $100");
         }
+      }
+
+      // Generate a helpful reply
+      const reply = products.length > 0
+        ? `Found ${products.length} gift${products.length === 1 ? '' : 's'} for "${searchQuery.trim()}". You can refine your search using the chips below.`
+        : `Sorry, I couldn't find any gifts matching "${searchQuery.trim()}". Try a different search term or browse our featured products.`;
+
+      return res.json({
+        reply,
+        products,
+        refineChips
       });
 
     } catch (error) {
