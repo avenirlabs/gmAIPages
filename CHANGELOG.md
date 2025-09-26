@@ -2,6 +2,139 @@
 
 All notable changes to the Gifts Guru AI search system will be documented in this file.
 
+## [v1.6.0] - 2024-12-XX - Navigation, Full-Width Chat & Image Aspects
+
+### Epic: Navigation nesting + full-width chat + square/portrait product images
+
+#### 🧭 **Feature 1: Hierarchical Navigation System**
+- **Nested navigation structure**: Parent-child relationships managed in Supabase
+- **Desktop dropdowns**: Hover/click interactions with proper keyboard navigation
+- **Mobile accordions**: Touch-friendly expand/collapse navigation
+- **Backward compatibility**: Maintains support for existing flat navigation
+- **Full accessibility**: ARIA attributes, focus management, screen reader support
+- **Database schema**: Extended `nav_links` table with hierarchical fields
+
+#### 📱 **Feature 2: Full-Width Chat Interface**
+- **Immersive experience**: Edge-to-edge chat interface for maximum screen usage
+- **Responsive containers**: Readable message column (78ch) with full-width product grids
+- **Adaptive product layout**: 2-6 columns responsive grid based on screen size
+- **Optimal readability**: Text content remains comfortable while maximizing visual space
+- **Performance optimized**: CSS-only layout with no JavaScript calculations
+
+#### 🖼️ **Feature 3: Configurable Product Image Aspects**
+- **Square/Portrait modes**: Toggle between 1:1 and 4:5 aspect ratios
+- **Environment configuration**: `VITE_CARD_IMAGE_ASPECT` for easy switching
+- **Container cropping**: CSS `object-cover` with center-focused product display
+- **Zero layout shift**: Consistent card heights prevent CLS issues
+- **Universal application**: Affects both chat results and featured product grids
+
+### Technical Implementation
+
+#### Navigation System (`v1.6.0`)
+- `server/routes/nav.ts`: Tree-building logic with parent-child relationships
+- `client/components/layout/NavMenu.tsx`: New component with dropdowns/accordions
+- `client/components/layout/SiteHeader.tsx`: Integration with backward compatibility
+- `docs/navigation.md`: Complete setup and management documentation
+
+#### Full-Width Chat (`v1.6.0`)
+- `client/pages/Index.tsx`: Removed container constraints for full-width
+- `client/components/gifts/ChatInterface.tsx`: Responsive container patterns
+- `client/components/gifts/ChatMessage.tsx`: Separated message and product layouts
+- `docs/architecture.md`: Updated with UI layout conventions
+
+#### Image Aspect System (`v1.6.0`)
+- `tailwind.config.ts`: Added `@tailwindcss/aspect-ratio` plugin
+- `client/config/ui.ts`: Configuration system with aspect ratio utilities
+- `client/components/gifts/ProductCard.tsx`: Configurable aspect container
+- `client/components/woocommerce/FeaturedGrid.tsx`: Consistent aspect ratios
+- `docs/ui.md`: Comprehensive UI configuration guide
+
+### Performance & Accessibility Enhancements
+
+#### Navigation Performance
+- **Tree caching**: Server-side navigation tree building with 5-minute TTL
+- **Keyboard navigation**: Arrow keys, Tab, Escape for dropdown interaction
+- **Focus management**: Proper focus trapping and restoration in dropdowns
+
+#### Layout Performance
+- **CSS-only solutions**: No JavaScript layout calculations or runtime overhead
+- **Container queries**: Responsive breakpoints without JavaScript media queries
+- **Image optimization**: `object-cover` with center cropping for consistent display
+
+#### Accessibility Improvements
+- **ARIA compliance**: `aria-expanded`, `aria-haspopup`, `role="menu"` attributes
+- **Screen readers**: Live announcements for navigation state changes
+- **Keyboard support**: Full keyboard navigation for all interactive elements
+- **Focus indicators**: Visible focus states for all navigation elements
+
+### Database Schema Updates
+
+#### Navigation Table Extensions
+```sql
+-- New hierarchical navigation fields
+ALTER TABLE nav_links ADD COLUMN parent_id UUID REFERENCES nav_links(id) ON DELETE SET NULL;
+ALTER TABLE nav_links ADD COLUMN sort_order INTEGER DEFAULT 0;
+ALTER TABLE nav_links ADD COLUMN is_visible BOOLEAN DEFAULT true;
+ALTER TABLE nav_links ADD COLUMN is_mega BOOLEAN DEFAULT false;
+
+-- Performance indexes
+CREATE INDEX idx_nav_links_parent_id ON nav_links(parent_id);
+CREATE INDEX idx_nav_links_sort_order ON nav_links(sort_order);
+```
+
+### API Enhancements
+
+#### Navigation API Response Format
+```typescript
+interface NavResponse {
+  items: NavLink[];        // New nested format
+  links: LegacyNavLink[];  // Backward compatibility
+}
+
+interface NavLink {
+  id: string;
+  label: string;
+  href?: string;
+  children?: NavLink[];
+  isMega?: boolean;
+}
+```
+
+### Configuration Options
+
+#### Image Aspect Ratio Configuration
+```bash
+# Environment variable options
+VITE_CARD_IMAGE_ASPECT=square     # Default: 1:1 aspect ratio
+VITE_CARD_IMAGE_ASPECT=portrait45 # 4:5 aspect ratio for marketplace style
+```
+
+#### Supported Aspect Ratios
+- **Square (`aspect-square`)**: 1:1 ratio for balanced product display
+- **Portrait (`aspect-[4/5]`)**: 4:5 ratio following e-commerce conventions
+
+### Migration Guide
+
+#### Navigation Migration
+1. Run database migration to add hierarchical fields
+2. Update navigation data in Supabase admin panel
+3. Test dropdown functionality on desktop and mobile
+4. Verify accessibility with screen readers
+
+#### Image Aspect Migration
+1. Set `VITE_CARD_IMAGE_ASPECT` environment variable
+2. Test product display across different screen sizes
+3. Verify no layout shift issues during image loading
+4. Review product image quality with new aspect ratios
+
+### Breaking Changes
+- None - all features maintain backward compatibility
+
+### Deprecations
+- `selectedRefinements` parameter (legacy chip selection) - use `filters` instead
+
+---
+
 ## [v1.5.0] - 2024-12-XX - Faceted Search & Filter System
 
 ### Major Features Added
