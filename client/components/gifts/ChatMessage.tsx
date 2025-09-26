@@ -21,7 +21,8 @@ export function ChatMessage({ role, content, products }: Props) {
           )}
         >
           {!isUser && (
-            <div className="mt-1 h-8 w-8 shrink-0 rounded-full bg-gradient-to-br from-[#155ca5] to-[#1d7dd8] text-white grid place-items-center font-semibold">
+            <div aria-hidden="true"
+ className="mt-1 h-8 w-8 shrink-0 rounded-full bg-gradient-to-br from-[#155ca5] to-[#1d7dd8] text-white grid place-items-center font-semibold">
               AI
             </div>
           )}
@@ -36,7 +37,8 @@ export function ChatMessage({ role, content, products }: Props) {
             <p className="whitespace-pre-wrap font-mono lg:font-sans">{content}</p>
           </div>
           {isUser && (
-            <div className="mt-1 h-8 w-8 shrink-0 rounded-full bg-gradient-to-br from-[#1d7dd8] to-[#155ca5] text-white grid place-items-center font-semibold">
+            <div aria-hidden="true"
+ className="mt-1 h-8 w-8 shrink-0 rounded-full bg-gradient-to-br from-[#1d7dd8] to-[#155ca5] text-white grid place-items-center font-semibold">
               You
             </div>
           )}
@@ -47,8 +49,7 @@ export function ChatMessage({ role, content, products }: Props) {
       {products && products.length > 0 && (
        <div className="mt-6 w-full">
     <div className="container mx-auto px-4">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5">
-
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
