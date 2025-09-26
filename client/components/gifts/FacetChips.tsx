@@ -41,7 +41,7 @@ export function FacetChips({ chips, facets, selectedFilters, onToggle, className
           onClick={() => !isDisabled && onToggle(chip)}
           disabled={isDisabled}
           className={cn(
-            "rounded-full border px-3 py-1 text-xs font-medium shadow-sm transition",
+  "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold capitalize shadow-sm transition",,
             isDisabled
               ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
               : isActive
