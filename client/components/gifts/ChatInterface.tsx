@@ -272,7 +272,7 @@ export function ChatInterface({
       {/* Chat conversation area */}
       <div
         ref={scrollRef}
-        className="w-full space-y-6 overflow-y-auto px-4 py-6 sm:px-6"
+        className="w-full space-y-6 overflow-y-auto py-6"
       >
         {turns.map((t, i) => (
           <div key={i}>
@@ -359,7 +359,7 @@ export function ChatInterface({
 
       {/* Input controls with responsive container */}
       <div className="border-t bg-background/80">
-        <div className="mx-auto max-w-4xl p-4 sm:p-6">
+<div className="w-full px-0 py-4 sm:py-6">
           {/* Active filters bar */}
           {activeFilterPills.length > 0 && (
             <div className="mb-3 rounded-lg border bg-slate-50/50 p-3">
