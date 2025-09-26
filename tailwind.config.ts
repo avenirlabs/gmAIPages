@@ -7,13 +7,17 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: {
+        DEFAULT: '1rem',
+        md: '1.5rem',
+        lg: '2rem'
+      },
       screens: {
-        sm: "var(--container-sm)",
-        md: "var(--container-md)",
-        lg: "var(--container-lg)",
-        xl: "var(--container-xl)",
-        "2xl": "var(--container-2xl)",
+        sm: '640px',
+        md: '768px',
+        lg: '1024px',
+        xl: '1280px',
+        '2xl': '1440px'
       },
     },
     extend: {
@@ -59,6 +63,19 @@ export default {
             DEFAULT: "hsl(var(--brand-accent-200))",
           },
         },
+
+        /* ALIASES to prevent missing-class styles */
+        'brand-primary-50':  'hsl(var(--brand-primary-50, var(--primary)))',
+        'brand-primary-100': 'hsl(var(--brand-primary-100, var(--primary)))',
+        'brand-primary-200': 'hsl(var(--brand-primary-200, var(--primary)))',
+        'brand-primary-300': 'hsl(var(--brand-primary-300, var(--primary)))',
+        'brand-primary-400': 'hsl(var(--brand-primary-400, var(--primary)))',
+        'brand-primary-500': 'hsl(var(--brand-primary-500, var(--primary)))',
+        'brand-primary-600': 'color-mix(in oklab, hsl(var(--brand-primary-500, var(--primary))) 90%, black)',
+        'brand-primary-700': 'color-mix(in oklab, hsl(var(--brand-primary-500, var(--primary))) 80%, black)',
+        'brand-secondary-800': 'hsl(var(--neutral-900))',
+        'brand-secondary-600': 'hsl(var(--neutral-600))',
+        'brand-secondary-500': 'hsl(var(--neutral-500))',
 
         /* Neutral Scale */
         neutral: {

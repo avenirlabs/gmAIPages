@@ -79,24 +79,18 @@ export default function Index() {
         <main className="flex flex-col">
           <Section variant="feature" size="lg" as="div">
             <div className="container">
-              <h2 className="text-2xl font-bold text-brand-secondary-800 mb-8">
-                {home?.content?.productGrid?.enabled
-                  ? (home.content.productGrid.source === "category"
-                      ? `Products: ${home.content.productGrid.categorySlug || "Category"}`
-                      : home.content.productGrid.source === "best_sellers"
-                        ? "Best Sellers"
-                        : "Featured Products")
-                  : "Featured Products"}
-              </h2>
-              {home?.content?.productGrid?.enabled ? (
-                <FeaturedGrid
-                  source={home.content.productGrid.source}
-                  categorySlug={home.content.productGrid.categorySlug}
-                  limit={home.content.productGrid.limit}
-                />
-              ) : (
-                <FeaturedGrid />
-              )}
+              <h2 className="text-2xl font-bold text-brand-secondary-800 mb-8">Featured Products</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                {home?.content?.productGrid?.enabled ? (
+                  <FeaturedGrid
+                    source={home.content.productGrid.source}
+                    categorySlug={home.content.productGrid.categorySlug}
+                    limit={home.content.productGrid.limit}
+                  />
+                ) : (
+                  <FeaturedGrid />
+                )}
+              </div>
             </div>
           </Section>
 

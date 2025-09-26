@@ -47,19 +47,30 @@ export default function HeroCTA({
             </button>
           </form>
 
-          {/* Starter prompts rail (desktop/tablet visible too) */}
-          <div className="mt-6 hidden md:block">
-            <div className="flex flex-wrap gap-2">
-              {starterPrompts.map((prompt, index) => (
-                <button
-                  key={index}
-                  onClick={() => handlePromptClick(prompt)}
-                  className="rounded-full border border-neutral-300 px-4 py-2 text-sm text-neutral-700 hover:border-brand-primary-300 hover:bg-brand-primary-50 transition-colors"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
+          {/* Mobile chip rail */}
+          <div className="mt-4 chip-rail md:hidden">
+            {starterPrompts.map((prompt, index) => (
+              <button
+                key={index}
+                onClick={() => handlePromptClick(prompt)}
+                className="rounded-full border px-3 py-1.5 text-sm text-brand-primary-500"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+
+          {/* Desktop starter prompts */}
+          <div className="mt-3 hidden md:flex flex-wrap gap-2">
+            {starterPrompts.map((prompt, index) => (
+              <button
+                key={index}
+                onClick={() => handlePromptClick(prompt)}
+                className="rounded-full border px-3 py-1.5 text-xs text-brand-primary-500"
+              >
+                {prompt}
+              </button>
+            ))}
           </div>
         </div>
       </div>

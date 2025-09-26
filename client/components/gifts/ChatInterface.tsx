@@ -11,9 +11,7 @@ import { StarterPrompts } from "./StarterPrompts";
 import { useGiftFilters } from "@/hooks/useGiftFilters";
 import { chipToFilter, isChipActive, filterToChip } from "@/utils/chipMapping";
 import { X } from "lucide-react";
-import { Page, Section } from "@/components/layout";
 import ChatQuickStartBar from "./ChatQuickStartBar";
-import MessageList from "./MessageList";
 
 interface Turn {
   role: "user" | "assistant";
@@ -263,30 +261,22 @@ export function ChatInterface({
 
   return (
     <div className="w-full">
-      {/* Mobile Quick Start CTA - sticky at top */}
-      <ChatQuickStartBar
-        onSubmit={handleSend}
-        starterPrompts={starterPrompts}
-      />
+      {/* Mobile CTA above the fold */}
+      <ChatQuickStartBar onSubmit={(q)=> { setInput(q); handleSend(q); }} starterPrompts={starterPrompts} />
 
       {/* Header */}
       <div className="container py-6 border-b">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-lg font-semibold text-brand-primary-500">Gifts Guru</h2>
-          <p className="text-xs text-muted-foreground">
-            Next-gen gifting intelligence at your fingertips. Tell it who you're
-            shopping for—let the magic unfold.
+          <p className="text-xs text-neutral-600">
+            Next-gen gifting intelligence. Tell me who you're shopping for — let the magic unfold.
           </p>
         </div>
       </div>
 
-      {/* Chat conversation area */}
+      {/* Messages */}
       <div className="container py-8 md:py-12">
-        <MessageList>
-          <div
-            ref={scrollRef}
-            className="space-y-6 overflow-y-auto"
-          >
+        <div className="max-w-[78ch] mx-auto space-y-6" ref={scrollRef}>
         {turns.map((t, i) => (
           <div key={i}>
             <ChatMessage
@@ -368,12 +358,13 @@ export function ChatInterface({
             Thinking...
           </div>
         ) : null}
-          </div>
-        </MessageList>
+        </div>
+      </div>
 
-        {/* Sticky refine chips bar */}
-        <div className="sticky sticky-offset z-30 bg-white/80 backdrop-blur mt-8 border-b border-neutral-200">
-          <div className="py-3">
+      {/* Input row (desktop/tablet; mobile uses the sticky bar) */}
+      <div className="border-t bg-white/80 hidden md:block">
+        <div className="container py-4 md:py-6">
+          <div className="max-w-4xl mx-auto">
             {/* Active filters bar */}
             {activeFilterPills.length > 0 && (
               <div className="mb-3 rounded-lg border bg-slate-50/50 p-3">
@@ -405,7 +396,7 @@ export function ChatInterface({
                           handleSend(lastAssistantTurn.query);
                         }
                       }}
-                      className="inline-flex items-center gap-1 rounded-full bg-brand-primary-500 px-2 py-1 text-xs font-medium text-white hover:bg-brand-primary-600 transition"
+                      className="inline-flex items-center gap-1 rounded-full bg-[#155ca5] px-2 py-1 text-xs font-medium text-white hover:bg-[#134a93] transition"
                     >
                       {pill.label}
                       <X size={12} />
@@ -422,22 +413,17 @@ export function ChatInterface({
                 facets={lastFacets}
                 selectedFilters={selectedFilters}
                 onToggle={handleChip}
+                className="mb-3"
               />
             ) : (
               <RefinementChips
                 chips={lastRefine}
                 onSelect={handleChip}
                 activeChips={activeChips}
+                className="mb-3"
               />
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* Input controls with responsive container */}
-      <div className="border-t bg-background/80 hidden md:block">
-        <div className="container py-4 md:py-6">
-          <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-3">
               <input
                 value={input}
@@ -449,7 +435,7 @@ export function ChatInterface({
                   }
                 }}
                 placeholder={placeholder}
-                className="flex-1 rounded-full border bg-background px-4 py-3 text-sm shadow-sm outline-none ring-brand-primary-500/20 focus:ring-2 focus:ring-brand-primary-500/20"
+                className="flex-1 rounded-full border bg-white px-4 py-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-brand-primary-500/20"
               />
               <Button
                 onClick={() => handleSend()}

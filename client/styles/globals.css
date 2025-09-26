@@ -411,6 +411,14 @@
   scroll-snap-align: start;
 }
 
+/* Page basics */
+html, body { background: #fff; color: hsl(var(--neutral-900)); }
+
+/* Rhythm */
+h1, h2, h3, h4 { margin: 0 0 .5em; line-height: 1.2; }
+p { margin: 0 0 1em; }
+img { display: block; max-width: 100%; height: auto; }
+
 /* Safe sticky offset if header is sticky */
 :root { --sticky-offset: 64px; } /* adjust if your header height changes */
 .sticky-offset {
