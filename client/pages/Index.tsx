@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { Page, Section, SiteHeader, SiteFooter } from "@/components/layout";
 import { FeaturedGrid } from "@/components/woocommerce/FeaturedGrid";
 import { ChatInterface } from "@/components/gifts/ChatInterface";
+import HeroCTA from "@/components/home/HeroCTA";
+import ProductGrid from "@/components/gifts/ProductGrid";
 
 interface HomePageRow {
   title: string | null;
@@ -13,7 +16,9 @@ interface HomePageRow {
 }
 
 export default function Index() {
+  const navigate = useNavigate();
   const [home, setHome] = useState<HomePageRow | null>(null);
+  const [showChat, setShowChat] = useState(false);
   useEffect(() => {
     const ac = new AbortController();
     (async () => {
@@ -39,54 +44,75 @@ export default function Index() {
     import("@/lib/seo").then(({ setSeo }) => setSeo(title, desc));
   }, [home?.title, home?.page_description]);
 
-  return (
-    <Page className="bg-[radial-gradient(60%_60%_at_50%_0%,rgba(21,92,165,0.12),transparent)]">
-      <SiteHeader />
+  const handleHeroSubmit = (query: string) => {
+    setShowChat(true);
+    // In a real app, you might want to navigate or trigger the chat interface
+    // For now, we'll show the chat interface below
+  };
 
-      <main className="flex flex-col">
-        <Section variant="hero" size="lg" className="max-w-3xl mx-auto">
-          <h1 className="text-4xl font-extrabold tracking-tight text-brand-secondary-800 md:text-6xl">
-            {home?.title || "Find the perfect gift by chatting"}
-          </h1>
-          <p className="mx-auto max-w-2xl text-balance text-brand-secondary-600">
-            {home?.page_description ||
-              "Ask in your own words. I'll parse your request with AI, search Algolia for matching products, and show results inline with refine chips."}
-          </p>
-        </Section>
-
-        <Section variant="default" size="sm" as="div" className="w-full">
-          <ChatInterface starterPrompts={home?.chips} />
-        </Section>
-
-        <Section variant="feature" size="md" as="div">
-          {home?.content?.productGrid?.enabled ? (
-            <FeaturedGrid
-              source={home.content.productGrid.source}
-              categorySlug={home.content.productGrid.categorySlug}
-              limit={home.content.productGrid.limit}
-              title={
-                home.content.productGrid.source === "category"
-                  ? `Products: ${home.content.productGrid.categorySlug || "Category"}`
-                  : home.content.productGrid.source === "best_sellers"
-                    ? "Best Sellers"
-                    : "Featured Products"
-              }
-            />
-          ) : (
-            <FeaturedGrid title="Featured Products" />
-          )}
-        </Section>
-
-        {home?.long_description ? (
-          <Section variant="content" size="lg" className="max-w-4xl mx-auto">
-            <div
-              dangerouslySetInnerHTML={{ __html: home.long_description }}
-            />
+  if (showChat) {
+    return (
+      <Page className="bg-[radial-gradient(60%_60%_at_50%_0%,rgba(21,92,165,0.12),transparent)]">
+        <SiteHeader />
+        <main className="flex flex-col">
+          <Section variant="default" size="sm" as="div" className="w-full">
+            <ChatInterface starterPrompts={home?.chips} />
           </Section>
-        ) : null}
-      </main>
+        </main>
+        <SiteFooter />
+      </Page>
+    );
+  }
 
-      <SiteFooter />
-    </Page>
+  return (
+    <>
+      {/* Hero CTA above the fold */}
+      <HeroCTA
+        onSubmit={handleHeroSubmit}
+        placeholder={home?.page_description ? `Try: ${home.page_description}` : undefined}
+        starterPrompts={home?.chips}
+      />
+
+      <Page className="bg-[radial-gradient(60%_60%_at_50%_0%,rgba(21,92,165,0.12),transparent)]">
+        <SiteHeader />
+
+        <main className="flex flex-col">
+          <Section variant="feature" size="lg" as="div">
+            <div className="container">
+              <h2 className="text-2xl font-bold text-brand-secondary-800 mb-8">
+                {home?.content?.productGrid?.enabled
+                  ? (home.content.productGrid.source === "category"
+                      ? `Products: ${home.content.productGrid.categorySlug || "Category"}`
+                      : home.content.productGrid.source === "best_sellers"
+                        ? "Best Sellers"
+                        : "Featured Products")
+                  : "Featured Products"}
+              </h2>
+              {home?.content?.productGrid?.enabled ? (
+                <FeaturedGrid
+                  source={home.content.productGrid.source}
+                  categorySlug={home.content.productGrid.categorySlug}
+                  limit={home.content.productGrid.limit}
+                />
+              ) : (
+                <FeaturedGrid />
+              )}
+            </div>
+          </Section>
+
+          {home?.long_description ? (
+            <Section variant="content" size="lg" className="container">
+              <div className="max-w-4xl mx-auto">
+                <div
+                  dangerouslySetInnerHTML={{ __html: home.long_description }}
+                />
+              </div>
+            </Section>
+          ) : null}
+        </main>
+
+        <SiteFooter />
+      </Page>
+    </>
   );
 }

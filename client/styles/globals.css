@@ -393,3 +393,26 @@
     color: hsl(var(--brand-secondary-800));
   }
 }
+
+/* ========================================
+   LAYOUT UTILITIES
+   ======================================== */
+
+/* Horizontal chip rail: no scrollbars on mobile, easy fling */
+.chip-rail {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 0.25rem;
+}
+.chip-rail > * {
+  scroll-snap-align: start;
+}
+
+/* Safe sticky offset if header is sticky */
+:root { --sticky-offset: 64px; } /* adjust if your header height changes */
+.sticky-offset {
+  top: var(--sticky-offset);
+}

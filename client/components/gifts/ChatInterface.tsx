@@ -11,6 +11,9 @@ import { StarterPrompts } from "./StarterPrompts";
 import { useGiftFilters } from "@/hooks/useGiftFilters";
 import { chipToFilter, isChipActive, filterToChip } from "@/utils/chipMapping";
 import { X } from "lucide-react";
+import { Page, Section } from "@/components/layout";
+import ChatQuickStartBar from "./ChatQuickStartBar";
+import MessageList from "./MessageList";
 
 interface Turn {
   role: "user" | "assistant";
@@ -260,20 +263,30 @@ export function ChatInterface({
 
   return (
     <div className="w-full">
+      {/* Mobile Quick Start CTA - sticky at top */}
+      <ChatQuickStartBar
+        onSubmit={handleSend}
+        starterPrompts={starterPrompts}
+      />
+
       {/* Header */}
-      <div className="mx-auto max-w-4xl border-b px-4 py-4 sm:px-6">
-        <h2 className="text-lg font-semibold text-[#155ca5]">Gifts Guru</h2>
-        <p className="text-xs text-muted-foreground">
-          Next-gen gifting intelligence at your fingertips. Tell it who you're
-          shopping for—let the magic unfold.
-        </p>
+      <div className="container py-6 border-b">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-lg font-semibold text-brand-primary-500">Gifts Guru</h2>
+          <p className="text-xs text-muted-foreground">
+            Next-gen gifting intelligence at your fingertips. Tell it who you're
+            shopping for—let the magic unfold.
+          </p>
+        </div>
       </div>
 
       {/* Chat conversation area */}
-      <div
-        ref={scrollRef}
-        className="w-full space-y-6 overflow-y-auto px-4 py-6 sm:px-6"
-      >
+      <div className="container py-8 md:py-12">
+        <MessageList>
+          <div
+            ref={scrollRef}
+            className="space-y-6 overflow-y-auto"
+          >
         {turns.map((t, i) => (
           <div key={i}>
             <ChatMessage
@@ -355,90 +368,97 @@ export function ChatInterface({
             Thinking...
           </div>
         ) : null}
-      </div>
+          </div>
+        </MessageList>
 
-      {/* Input controls with responsive container */}
-      <div className="border-t bg-background/80">
-        <div className="mx-auto max-w-4xl p-4 sm:p-6">
-          {/* Active filters bar */}
-          {activeFilterPills.length > 0 && (
-            <div className="mb-3 rounded-lg border bg-slate-50/50 p-3">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-600">Active Filters:</span>
-                <button
-                  onClick={() => {
-                    clearAll();
-                    // Re-run last query without filters
-                    const lastAssistantTurn = [...turns].reverse().find(t => t.role === 'assistant' && t.query);
-                    if (lastAssistantTurn?.query) {
-                      handleSend(lastAssistantTurn.query);
-                    }
-                  }}
-                  className="text-xs text-slate-500 hover:text-slate-700 underline"
-                >
-                  Clear all
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {activeFilterPills.map(pill => (
+        {/* Sticky refine chips bar */}
+        <div className="sticky sticky-offset z-30 bg-white/80 backdrop-blur mt-8 border-b border-neutral-200">
+          <div className="py-3">
+            {/* Active filters bar */}
+            {activeFilterPills.length > 0 && (
+              <div className="mb-3 rounded-lg border bg-slate-50/50 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-600">Active Filters:</span>
                   <button
-                    key={`${pill.key}-${pill.value}`}
                     onClick={() => {
-                      toggleValue(pill.key, pill.value);
-                      // Re-run last query with updated filters
+                      clearAll();
+                      // Re-run last query without filters
                       const lastAssistantTurn = [...turns].reverse().find(t => t.role === 'assistant' && t.query);
                       if (lastAssistantTurn?.query) {
                         handleSend(lastAssistantTurn.query);
                       }
                     }}
-                    className="inline-flex items-center gap-1 rounded-full bg-[#155ca5] px-2 py-1 text-xs font-medium text-white hover:bg-[#134a93] transition"
+                    className="text-xs text-slate-500 hover:text-slate-700 underline"
                   >
-                    {pill.label}
-                    <X size={12} />
+                    Clear all
                   </button>
-                ))}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {activeFilterPills.map(pill => (
+                    <button
+                      key={`${pill.key}-${pill.value}`}
+                      onClick={() => {
+                        toggleValue(pill.key, pill.value);
+                        // Re-run last query with updated filters
+                        const lastAssistantTurn = [...turns].reverse().find(t => t.role === 'assistant' && t.query);
+                        if (lastAssistantTurn?.query) {
+                          handleSend(lastAssistantTurn.query);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 rounded-full bg-brand-primary-500 px-2 py-1 text-xs font-medium text-white hover:bg-brand-primary-600 transition"
+                    >
+                      {pill.label}
+                      <X size={12} />
+                    </button>
+                  ))}
+                </div>
               </div>
+            )}
+
+            {/* Show facet chips with counts if facets are available */}
+            {Object.keys(lastFacets).length > 0 ? (
+              <FacetChips
+                chips={lastRefine}
+                facets={lastFacets}
+                selectedFilters={selectedFilters}
+                onToggle={handleChip}
+              />
+            ) : (
+              <RefinementChips
+                chips={lastRefine}
+                onSelect={handleChip}
+                activeChips={activeChips}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Input controls with responsive container */}
+      <div className="border-t bg-background/80 hidden md:block">
+        <div className="container py-4 md:py-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center gap-3">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder={placeholder}
+                className="flex-1 rounded-full border bg-background px-4 py-3 text-sm shadow-sm outline-none ring-brand-primary-500/20 focus:ring-2 focus:ring-brand-primary-500/20"
+              />
+              <Button
+                onClick={() => handleSend()}
+                disabled={!canSend}
+                className="rounded-full px-6 bg-brand-primary-500 hover:bg-brand-primary-600"
+              >
+                Send
+              </Button>
             </div>
-          )}
-
-          {/* Show facet chips with counts if facets are available */}
-          {Object.keys(lastFacets).length > 0 ? (
-            <FacetChips
-              chips={lastRefine}
-              facets={lastFacets}
-              selectedFilters={selectedFilters}
-              onToggle={handleChip}
-              className="mb-3"
-            />
-          ) : (
-            <RefinementChips
-              chips={lastRefine}
-              onSelect={handleChip}
-              activeChips={activeChips}
-              className="mb-3"
-            />
-          )}
-
-          <div className="flex items-center gap-3">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder={placeholder}
-              className="flex-1 rounded-full border bg-background px-4 py-3 text-sm shadow-sm outline-none ring-primary/20 focus:ring-2"
-            />
-            <Button
-              onClick={() => handleSend()}
-              disabled={!canSend}
-              className="rounded-full px-6"
-            >
-              Send
-            </Button>
           </div>
         </div>
       </div>

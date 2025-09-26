@@ -252,6 +252,130 @@ Self-hosted fonts are configured with performance optimization:
 - Component-specific design tokens
 - Animation and transition tokens
 
+## Home + Chat Layout System (v1.01c)
+
+### Hero CTA & Mobile-First Design
+
+**Above-the-Fold Strategy**:
+- **Desktop**: Hero CTA section with prominent input field and starter prompts
+- **Mobile**: Sticky QuickStart bar ensures search input is always above fold
+- **Responsive**: Seamless transition between hero and sticky modes
+
+**Layout Components**:
+
+#### `HeroCTA` (Desktop Hero Section)
+```tsx
+<HeroCTA
+  onSubmit={handleSubmit}
+  placeholder="Try: gifts for sister under ₹500"
+  starterPrompts={prompts}
+/>
+```
+- Full-width hero section with gradient background
+- Large heading with AI-powered messaging
+- Prominent search input with starter prompt chips
+- Desktop-optimized spacing (py-20 md:py-24)
+
+#### `ChatQuickStartBar` (Mobile Sticky CTA)
+```tsx
+<ChatQuickStartBar
+  onSubmit={handleSubmit}
+  starterPrompts={prompts}
+/>
+```
+- `md:hidden` - mobile-only sticky bar
+- `sticky-offset` positioning with backdrop blur
+- Horizontal chip rail with scroll snap
+- Above-fold guarantee on mobile devices
+
+### Container & Spacing System
+
+**MessageList (78ch width constraint)**:
+```tsx
+<MessageList>
+  {/* Chat messages with readable width */}
+</MessageList>
+```
+- Constrains message width to `max-w-[78ch]` for optimal readability
+- Product grids below can use full container width
+- Centered with `mx-auto` for balanced layout
+
+**ProductGrid (Responsive Grid)**:
+```tsx
+<ProductGrid>
+  {products.map(p => <ProductCard key={p.id} product={p} />)}
+</ProductGrid>
+```
+- Responsive: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5`
+- Consistent gaps: `gap-4 md:gap-6`
+- Full-bleed within container for maximum product visibility
+
+### Mobile Chip Rail Pattern
+
+**Horizontal Scrolling with Snap**:
+```css
+.chip-rail {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.chip-rail > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+```
+
+**Usage in Components**:
+- StarterPrompts: Mobile horizontal rail, desktop flex wrap
+- QuickStartBar: Horizontal chip selection
+- Smooth momentum scrolling on iOS/Android
+
+### ProductCard Enhancements
+
+**Consistent Design Tokens**:
+- Border: `border-neutral-200` with subtle shadows
+- Spacing: `p-4` internal padding, `gap-3` between elements
+- Typography: `text-brand-secondary-800` titles, `text-brand-primary-500` prices
+- Hover states: `shadow-md` elevation on hover
+
+**Brand Color Integration**:
+- Primary actions: `bg-brand-primary-500 hover:bg-brand-primary-600`
+- Text hierarchy: `text-brand-secondary-800` → `text-brand-secondary-600` → `text-brand-secondary-500`
+- Interactive elements: `hover:text-brand-primary-500`
+
+### Performance Optimizations
+
+**Above-the-Fold Critical Rendering**:
+- Hero CTA loads immediately without layout shift
+- Sticky positioning with `backdrop-blur` for performance
+- CSS-only responsive behavior (no JavaScript media queries)
+
+**Scroll Performance**:
+- `scroll-snap` provides natural mobile scrolling behavior
+- `-webkit-overflow-scrolling: touch` for momentum scrolling
+- Minimal DOM updates with stable component keys
+
+### Responsive Breakpoints
+
+**Mobile First Approach**:
+```css
+/* Mobile: 2 columns, sticky CTA */
+.grid-cols-2
+
+/* Tablet: 3-4 columns, hero visible */
+.sm:grid-cols-3 .lg:grid-cols-4
+
+/* Desktop: 5 columns, full hero */
+.xl:grid-cols-5
+```
+
+**Container Strategy**:
+- Messages: Constrained to 78ch for readability
+- Products: Full container width for maximum density
+- CTAs: Edge-to-edge on mobile, contained on desktop
+
 ### Aspect Ratio System
 - `'landscape'` (16:9 or 3:2) for wide products
 - `'tall'` (3:4) for very vertical products
