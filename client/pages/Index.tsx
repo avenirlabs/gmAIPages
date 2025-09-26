@@ -47,7 +47,7 @@ export default function Index() {
 
       <main className="container mx-auto grid min-h-[calc(100vh-5rem)] grid-rows-[auto_1fr] gap-8 pb-10 pt-8">
         <section className="mx-auto max-w-3xl text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-[#222529] md:text-6xl">
+         <h1 className="text-balance text-4xl font-black tracking-tight md:text-6xl bg-gradient-to-b from-[#111827] to-[#374151] bg-clip-text text-transparent">
             {home?.title || "Find the perfect gift by chatting"}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-balance text-[#777]">
