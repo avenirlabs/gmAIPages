@@ -5,6 +5,7 @@ import { ChatInterface } from "@/components/gifts/ChatInterface";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { FeaturedGrid } from "@/components/woocommerce/FeaturedGrid";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import PageContainer from "@/components/layout/PageContainer";
 
 interface PageRow {
   id: string;
@@ -53,22 +54,24 @@ export default function Page() {
   if (!page) return null;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(60%_60%_at_50%_0%,rgba(21,92,165,0.12),transparent)]">
+    <div className="min-h-screen bg-gradient-to-b from-[#DBEBFF]/40 via-white to-white">
+
       <SiteHeader />
 
       <main className="container mx-auto grid min-h-[calc(100vh-5rem)] grid-rows-[auto_1fr] gap-8 pb-10 pt-8">
-        <section className="mx-auto max-w-3xl text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-[#222529] md:text-6xl">
-            {page.title || slug}
-          </h1>
-          {page.page_description ? (
-            <p className="mx-auto mt-4 max-w-2xl text-balance text-[#777]">
-              {page.page_description}
-            </p>
-          ) : null}
-        </section>
+       <section className="text-center">
+  <h1 className="text-balance text-4xl font-black tracking-tight md:text-6xl bg-gradient-to-b from-[#111827] to-[#374151] bg-clip-text text-transparent">
+    {page.title || slug}
+  </h1>
+  {page.page_description ? (
+    <p className="mt-4 text-balance text-[15px] leading-7 text-[#4b5563] md:text-base">
+      {page.page_description}
+    </p>
+  ) : null}
+</section>
 
-        <section className="mx-auto w-full max-w-5xl px-2 sm:px-0">
+
+<section className="w-full">
           <ChatInterface starterPrompts={page?.chips} />
         </section>
 
@@ -87,16 +90,14 @@ export default function Page() {
           />
         ) : null}
 
-        {page.long_description ? (
-          <section className="mx-auto w-full max-w-4xl px-2 sm:px-0">
-            <div className="prose prose-lg max-w-none text-[#333] leading-7 md:leading-8">
-              <div
-                className="font-mono lg:font-sans"
-                dangerouslySetInnerHTML={{ __html: page.long_description }}
-              />
-            </div>
-          </section>
-        ) : null}
+       {page.long_description ? (
+  <PageContainer>
+    <div
+      className="font-mono lg:font-sans"
+      dangerouslySetInnerHTML={{ __html: page.long_description }}
+    />
+  </PageContainer>
+) : null}
       </main>
       <SiteFooter />
     </div>
