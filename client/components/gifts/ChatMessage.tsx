@@ -13,7 +13,7 @@ export function ChatMessage({ role, content, products }: Props) {
   return (
     <div className="w-full">
       {/* Message bubble in readable container */}
-      <div className="mx-auto max-w-[78ch] px-4">
+<div className="container mx-auto px-4 max-w-none">
         <div
           className={cn(
             "flex w-full gap-3",
@@ -47,7 +47,8 @@ export function ChatMessage({ role, content, products }: Props) {
       {products && products.length > 0 && (
        <div className="mt-6 w-full">
     <div className="container mx-auto px-4">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5">
+
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
