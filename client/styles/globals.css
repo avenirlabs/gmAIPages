@@ -1,0 +1,395 @@
+/** @import must precede all other statements */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   SELF-HOSTED FONTS WITH PERFORMANCE OPTIMIZATION
+   ======================================== */
+
+/* TODO: Replace with actual WOFF2 font files once chosen
+   Current implementation uses system font stack optimized for performance
+   Recommended fonts: Inter, System UI, or similar clean sans-serif */
+
+@font-face {
+  font-family: 'AppFont';
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap; /* Ensures text remains visible during font load */
+  /* TODO: Add actual font files
+  src: url('/fonts/AppFont-Variable.woff2') format('woff2-variations'),
+       url('/fonts/AppFont-Variable.woff2') format('woff2'); */
+}
+
+/* ========================================
+   DESIGN TOKENS - GiftsMate Brand System
+   ======================================== */
+
+@layer base {
+  :root {
+    /* ========================================
+       BRAND COLORS - Aligned with giftsmate.net
+       ======================================== */
+
+    /* Primary Brand Colors */
+    --brand-primary: 211 77% 36%;        /* #155ca5 - giftsmate.net primary blue */
+    --brand-primary-50: 211 100% 95%;    /* Very light blue for backgrounds */
+    --brand-primary-100: 211 100% 85%;   /* Light blue for hover states */
+    --brand-primary-200: 211 85% 75%;    /* Medium light blue */
+    --brand-primary-300: 211 77% 65%;    /* Medium blue */
+    --brand-primary-400: 211 77% 50%;    /* Standard blue */
+    --brand-primary-500: 211 77% 36%;    /* Main brand blue */
+    --brand-primary-600: 211 77% 30%;    /* Dark blue */
+    --brand-primary-700: 211 77% 25%;    /* Darker blue */
+    --brand-primary-800: 211 77% 20%;    /* Very dark blue */
+    --brand-primary-900: 211 77% 15%;    /* Deepest blue */
+
+    /* Secondary Colors */
+    --brand-secondary: 219 14% 28%;      /* #222529 - giftsmate.net text color */
+    --brand-secondary-50: 219 14% 95%;   /* Very light gray */
+    --brand-secondary-100: 219 14% 85%;  /* Light gray */
+    --brand-secondary-200: 219 14% 75%;  /* Medium light gray */
+    --brand-secondary-300: 219 14% 65%;  /* Medium gray */
+    --brand-secondary-400: 219 14% 55%;  /* Standard gray */
+    --brand-secondary-500: 219 14% 45%;  /* Main gray */
+    --brand-secondary-600: 219 14% 35%;  /* Dark gray */
+    --brand-secondary-700: 219 14% 28%;  /* Main secondary */
+    --brand-secondary-800: 219 14% 20%;  /* Very dark gray */
+    --brand-secondary-900: 219 14% 12%;  /* Deepest gray */
+
+    /* Accent Colors */
+    --brand-accent: 219 78% 85%;         /* #DBEBFF - giftsmate.net light blue */
+    --brand-accent-50: 219 78% 95%;      /* Very light accent */
+    --brand-accent-100: 219 78% 90%;     /* Light accent */
+    --brand-accent-200: 219 78% 85%;     /* Main accent */
+    --brand-accent-300: 219 78% 80%;     /* Medium accent */
+    --brand-accent-400: 219 78% 75%;     /* Darker accent */
+    --brand-accent-500: 219 78% 70%;     /* Deep accent */
+
+    /* Neutral Scale for Text & Backgrounds */
+    --neutral-0: 0 0% 100%;              /* Pure white */
+    --neutral-50: 0 0% 98%;              /* Off-white */
+    --neutral-100: 0 0% 95%;             /* Light gray */
+    --neutral-200: 0 0% 90%;             /* Border gray */
+    --neutral-300: 0 0% 82%;             /* Input gray */
+    --neutral-400: 0 0% 68%;             /* Placeholder gray */
+    --neutral-500: 0 0% 52%;             /* Medium gray */
+    --neutral-600: 0 0% 42%;             /* Text gray */
+    --neutral-700: 0 0% 32%;             /* Dark text */
+    --neutral-800: 0 0% 22%;             /* Darker text */
+    --neutral-900: 0 0% 12%;             /* Darkest text */
+    --neutral-950: 0 0% 5%;              /* Almost black */
+
+    /* Semantic Colors */
+    --success: 142 76% 36%;              /* Green for success states */
+    --success-light: 142 76% 90%;        /* Light green background */
+    --warning: 43 96% 56%;               /* Yellow for warnings */
+    --warning-light: 43 96% 90%;         /* Light yellow background */
+    --error: 0 84% 60%;                  /* Red for errors */
+    --error-light: 0 84% 95%;            /* Light red background */
+    --info: 211 77% 36%;                 /* Blue for info (matches primary) */
+    --info-light: 211 77% 95%;           /* Light blue background */
+
+    /* ========================================
+       TYPOGRAPHY SCALE
+       ======================================== */
+
+    /* Font Sizes - Harmonious scale based on 1.25 ratio */
+    --text-xs: 0.75rem;      /* 12px */
+    --text-sm: 0.875rem;     /* 14px */
+    --text-base: 1rem;       /* 16px - body text */
+    --text-lg: 1.125rem;     /* 18px */
+    --text-xl: 1.25rem;      /* 20px */
+    --text-2xl: 1.5rem;      /* 24px - H6 */
+    --text-3xl: 1.875rem;    /* 30px - H5 */
+    --text-4xl: 2.25rem;     /* 36px - H4 */
+    --text-5xl: 3rem;        /* 48px - H3 */
+    --text-6xl: 3.75rem;     /* 60px - H2 */
+    --text-7xl: 4.5rem;      /* 72px - H1 */
+
+    /* Line Heights */
+    --leading-tight: 1.25;    /* For headings */
+    --leading-snug: 1.375;    /* For subheadings */
+    --leading-normal: 1.5;    /* For body text */
+    --leading-relaxed: 1.625; /* For larger text */
+    --leading-loose: 2;       /* For spacious layouts */
+
+    /* Font Weights */
+    --font-light: 300;
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 800;
+
+    /* Font Families - Optimized system stack until custom fonts are added */
+    --font-body: 'AppFont', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-heading: 'AppFont', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+    /* ========================================
+       SPACING SCALE - Based on 4px grid
+       ======================================== */
+
+    --space-px: 1px;
+    --space-0: 0px;
+    --space-1: 0.25rem;    /* 4px */
+    --space-2: 0.5rem;     /* 8px */
+    --space-3: 0.75rem;    /* 12px */
+    --space-4: 1rem;       /* 16px */
+    --space-5: 1.25rem;    /* 20px */
+    --space-6: 1.5rem;     /* 24px */
+    --space-8: 2rem;       /* 32px */
+    --space-10: 2.5rem;    /* 40px */
+    --space-12: 3rem;      /* 48px */
+    --space-16: 4rem;      /* 64px */
+    --space-20: 5rem;      /* 80px */
+    --space-24: 6rem;      /* 96px */
+    --space-32: 8rem;      /* 128px */
+    --space-40: 10rem;     /* 160px */
+    --space-48: 12rem;     /* 192px */
+    --space-56: 14rem;     /* 224px */
+    --space-64: 16rem;     /* 256px */
+
+    /* ========================================
+       BORDER RADIUS - Consistent rounding
+       ======================================== */
+
+    --radius-none: 0px;
+    --radius-sm: 0.125rem;   /* 2px */
+    --radius-base: 0.25rem;  /* 4px */
+    --radius-md: 0.375rem;   /* 6px */
+    --radius-lg: 0.5rem;     /* 8px - default */
+    --radius-xl: 0.75rem;    /* 12px */
+    --radius-2xl: 1rem;      /* 16px */
+    --radius-3xl: 1.5rem;    /* 24px */
+    --radius-full: 9999px;   /* Fully rounded */
+
+    /* ========================================
+       SHADOWS - Layered depth system
+       ======================================== */
+
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-base: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+
+    /* Brand-specific shadows with primary color */
+    --shadow-primary: 0 10px 15px -3px rgb(21 92 165 / 0.1), 0 4px 6px -4px rgb(21 92 165 / 0.1);
+    --shadow-primary-lg: 0 20px 25px -5px rgb(21 92 165 / 0.1), 0 8px 10px -6px rgb(21 92 165 / 0.1);
+
+    /* ========================================
+       COMPONENT-SPECIFIC TOKENS
+       ======================================== */
+
+    /* Container widths */
+    --container-sm: 640px;
+    --container-md: 768px;
+    --container-lg: 1024px;
+    --container-xl: 1280px;
+    --container-2xl: 1536px;
+
+    /* Z-index scale */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+    --z-toast: 1080;
+
+    /* ========================================
+       SHADCN COMPATIBILITY LAYER
+       Maps existing shadcn variables to brand tokens
+       ======================================== */
+
+    /* Background colors */
+    --background: var(--neutral-0);
+    --foreground: var(--brand-secondary-700);
+
+    /* Card colors */
+    --card: var(--neutral-0);
+    --card-foreground: var(--brand-secondary-700);
+
+    /* Popover colors */
+    --popover: var(--neutral-0);
+    --popover-foreground: var(--brand-secondary-700);
+
+    /* Primary colors - maps to brand primary */
+    --primary: var(--brand-primary-500);
+    --primary-foreground: var(--neutral-0);
+
+    /* Secondary colors - maps to brand accent */
+    --secondary: var(--brand-accent-200);
+    --secondary-foreground: var(--brand-primary-600);
+
+    /* Muted colors */
+    --muted: var(--neutral-100);
+    --muted-foreground: var(--neutral-600);
+
+    /* Accent colors */
+    --accent: var(--brand-accent-200);
+    --accent-foreground: var(--brand-primary-600);
+
+    /* Destructive colors */
+    --destructive: var(--error);
+    --destructive-foreground: var(--neutral-0);
+
+    /* Border and input colors */
+    --border: var(--neutral-200);
+    --input: var(--neutral-200);
+    --ring: var(--brand-primary-500);
+
+    /* Default radius */
+    --radius: var(--radius-lg);
+
+    /* Sidebar colors */
+    --sidebar-background: var(--brand-accent-100);
+    --sidebar-foreground: var(--brand-secondary-700);
+    --sidebar-primary: var(--brand-primary-500);
+    --sidebar-primary-foreground: var(--neutral-0);
+    --sidebar-accent: var(--brand-accent-200);
+    --sidebar-accent-foreground: var(--brand-primary-600);
+    --sidebar-border: var(--neutral-200);
+    --sidebar-ring: var(--brand-primary-500);
+  }
+
+  /* ========================================
+     DARK MODE THEME
+     ======================================== */
+
+  .dark {
+    /* Dark mode overrides - maintaining brand consistency */
+    --background: var(--brand-secondary-900);
+    --foreground: var(--neutral-50);
+
+    --card: var(--brand-secondary-800);
+    --card-foreground: var(--neutral-50);
+
+    --popover: var(--brand-secondary-800);
+    --popover-foreground: var(--neutral-50);
+
+    --primary: var(--brand-primary-400);
+    --primary-foreground: var(--brand-secondary-900);
+
+    --secondary: var(--brand-secondary-800);
+    --secondary-foreground: var(--neutral-100);
+
+    --muted: var(--brand-secondary-800);
+    --muted-foreground: var(--neutral-400);
+
+    --accent: var(--brand-primary-700);
+    --accent-foreground: var(--neutral-50);
+
+    --destructive: var(--error);
+    --destructive-foreground: var(--neutral-50);
+
+    --border: var(--brand-secondary-700);
+    --input: var(--brand-secondary-700);
+    --ring: var(--brand-primary-400);
+
+    --sidebar-background: var(--brand-secondary-900);
+    --sidebar-foreground: var(--neutral-50);
+    --sidebar-primary: var(--brand-primary-400);
+    --sidebar-primary-foreground: var(--neutral-50);
+    --sidebar-accent: var(--brand-secondary-800);
+    --sidebar-accent-foreground: var(--neutral-50);
+    --sidebar-border: var(--brand-secondary-700);
+    --sidebar-ring: var(--brand-primary-400);
+  }
+}
+
+/* ========================================
+   BASE STYLES & TYPOGRAPHY
+   ======================================== */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography Hierarchy */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: var(--font-bold);
+    line-height: var(--leading-tight);
+    letter-spacing: -0.025em;
+    color: hsl(var(--brand-secondary-800));
+  }
+
+  h1 {
+    font-size: var(--text-7xl);
+    font-weight: var(--font-extrabold);
+    letter-spacing: -0.05em;
+  }
+
+  h2 {
+    font-size: var(--text-6xl);
+    font-weight: var(--font-bold);
+    letter-spacing: -0.04em;
+  }
+
+  h3 {
+    font-size: var(--text-5xl);
+    font-weight: var(--font-bold);
+    letter-spacing: -0.03em;
+  }
+
+  h4 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-semibold);
+    letter-spacing: -0.02em;
+  }
+
+  h5 {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-semibold);
+  }
+
+  h6 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-semibold);
+  }
+
+  p {
+    line-height: var(--leading-normal);
+    color: hsl(var(--brand-secondary-600));
+  }
+
+  .text-body-lg {
+    font-size: var(--text-lg);
+    line-height: var(--leading-relaxed);
+  }
+
+  .text-caption {
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: hsl(var(--neutral-500));
+  }
+
+  /* Focus styles with brand consistency */
+  :focus-visible {
+    outline: 2px solid hsl(var(--brand-primary-500));
+    outline-offset: 2px;
+  }
+
+  /* Selection styles */
+  ::selection {
+    background-color: hsl(var(--brand-primary-500) / 0.2);
+    color: hsl(var(--brand-secondary-800));
+  }
+}

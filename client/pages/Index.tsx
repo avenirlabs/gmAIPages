@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { SiteHeader } from "@/components/layout/SiteHeader";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { Page, Section, SiteHeader, SiteFooter } from "@/components/layout";
 import { FeaturedGrid } from "@/components/woocommerce/FeaturedGrid";
 import { ChatInterface } from "@/components/gifts/ChatInterface";
 
@@ -41,55 +40,53 @@ export default function Index() {
   }, [home?.title, home?.page_description]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(60%_60%_at_50%_0%,rgba(21,92,165,0.12),transparent)]">
-      {/* Giftsmate-like header */}
+    <Page className="bg-[radial-gradient(60%_60%_at_50%_0%,rgba(21,92,165,0.12),transparent)]">
       <SiteHeader />
 
-      <main className="container mx-auto grid min-h-[calc(100vh-5rem)] grid-rows-[auto_1fr] gap-8 pb-10 pt-8">
-        <section className="mx-auto max-w-3xl text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-[#222529] md:text-6xl">
+      <main className="flex flex-col">
+        <Section variant="hero" size="lg" className="max-w-3xl mx-auto">
+          <h1 className="text-4xl font-extrabold tracking-tight text-brand-secondary-800 md:text-6xl">
             {home?.title || "Find the perfect gift by chatting"}
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-balance text-[#777]">
+          <p className="mx-auto max-w-2xl text-balance text-brand-secondary-600">
             {home?.page_description ||
-              "Ask in your own words. I’ll parse your request with AI, search Algolia for matching products, and show results inline with refine chips."}
+              "Ask in your own words. I'll parse your request with AI, search Algolia for matching products, and show results inline with refine chips."}
           </p>
-        </section>
+        </Section>
 
-        <section className="w-full">
+        <Section variant="default" size="sm" as="div" className="w-full">
           <ChatInterface starterPrompts={home?.chips} />
-        </section>
+        </Section>
 
-        {/* Featured products just above the long description */}
-        {home?.content?.productGrid?.enabled ? (
-          <FeaturedGrid
-            source={home.content.productGrid.source}
-            categorySlug={home.content.productGrid.categorySlug}
-            limit={home.content.productGrid.limit}
-            title={
-              home.content.productGrid.source === "category"
-                ? `Products: ${home.content.productGrid.categorySlug || "Category"}`
-                : home.content.productGrid.source === "best_sellers"
-                  ? "Best Sellers"
-                  : "Featured Products"
-            }
-          />
-        ) : (
-          <FeaturedGrid title="Featured Products" />
-        )}
+        <Section variant="feature" size="md" as="div">
+          {home?.content?.productGrid?.enabled ? (
+            <FeaturedGrid
+              source={home.content.productGrid.source}
+              categorySlug={home.content.productGrid.categorySlug}
+              limit={home.content.productGrid.limit}
+              title={
+                home.content.productGrid.source === "category"
+                  ? `Products: ${home.content.productGrid.categorySlug || "Category"}`
+                  : home.content.productGrid.source === "best_sellers"
+                    ? "Best Sellers"
+                    : "Featured Products"
+              }
+            />
+          ) : (
+            <FeaturedGrid title="Featured Products" />
+          )}
+        </Section>
 
         {home?.long_description ? (
-          <section className="mx-auto w-full max-w-4xl px-2 sm:px-0">
-            <div className="prose prose-lg max-w-none text-[#333] leading-7 md:leading-8">
-              <div
-                dangerouslySetInnerHTML={{ __html: home.long_description }}
-              />
-            </div>
-          </section>
+          <Section variant="content" size="lg" className="max-w-4xl mx-auto">
+            <div
+              dangerouslySetInnerHTML={{ __html: home.long_description }}
+            />
+          </Section>
         ) : null}
       </main>
 
       <SiteFooter />
-    </div>
+    </Page>
   );
 }
