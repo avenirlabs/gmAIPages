@@ -41,13 +41,13 @@ export function FacetChips({ chips, facets, selectedFilters, onToggle, className
           onClick={() => !isDisabled && onToggle(chip)}
           disabled={isDisabled}
           className={cn(
-  "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold capitalize shadow-sm transition",,
-            isDisabled
-              ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-              : isActive
-              ? "border-[#155ca5] bg-[#155ca5] text-white ring-1 ring-[#155ca5]/30 hover:bg-[#134a93]"
-              : "border-transparent bg-[#DBEBFF] text-[#155ca5] ring-1 ring-[#155ca5]/20 hover:bg-[#cfe3ff]"
-          )}
+  "inline-flex items-center gap-2 rounded-full border px-5 py-2 text-base font-semibold capitalize shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#155ca5]/50",
+  isDisabled
+    ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+    : isActive
+    ? "border-[#155ca5] bg-[#155ca5] text-white ring-1 ring-[#155ca5]/30 hover:bg-[#134a93]"
+    : "border-transparent bg-[#DBEBFF] text-[#155ca5] ring-1 ring-[#155ca5]/20 hover:bg-[#cfe3ff]"
+)}
           title={isDisabled ? "No results available for this filter" : undefined}
         >
           {chip}
