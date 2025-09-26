@@ -41,7 +41,8 @@ export default function Index() {
   }, [home?.title, home?.page_description]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(60%_60%_at_50%_0%,rgba(21,92,165,0.12),transparent)]">
+   <div className="min-h-screen bg-gradient-to-b from-[#DBEBFF]/40 via-white to-white">
+
       {/* Giftsmate-like header */}
       <SiteHeader />
 
