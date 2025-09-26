@@ -46,16 +46,15 @@ export default function Index() {
       <SiteHeader />
 
       <main className="container mx-auto grid min-h-[calc(100vh-5rem)] grid-rows-[auto_1fr] gap-8 pb-10 pt-8">
-        <section className="mx-auto max-w-3xl text-center">
-         <h1 className="text-balance text-4xl font-black tracking-tight md:text-6xl bg-gradient-to-b from-[#111827] to-[#374151] bg-clip-text text-transparent">
-            {home?.title || "Find the perfect gift by chatting"}
-          </h1>
-         <p className="mx-auto mt-4 max-w-2xl text-balance text-[15px] leading-7 text-[#4b5563] md:text-base">
-
-            {home?.page_description ||
-              "Ask in your own words. I’ll parse your request with AI, search Algolia for matching products, and show results inline with refine chips."}
-          </p>
-        </section>
+       <section className="text-center">
+  <h1 className="text-balance text-4xl font-black tracking-tight md:text-6xl bg-gradient-to-b from-[#111827] to-[#374151] bg-clip-text text-transparent">
+    {home?.title || "Find the perfect gift by chatting"}
+  </h1>
+  <p className="mt-4 text-balance text-[15px] leading-7 text-[#4b5563] md:text-base">
+    {home?.page_description ||
+      "Ask in your own words. I’ll parse your request with AI, search Algolia for matching products, and show results inline with refine chips."}
+  </p>
+</section>
 
         <section className="w-full">
           <ChatInterface starterPrompts={home?.chips} />
