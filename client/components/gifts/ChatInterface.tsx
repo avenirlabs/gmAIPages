@@ -275,7 +275,7 @@ export function ChatInterface({
         className="w-full space-y-6 overflow-y-auto py-6"
       >
         {turns.map((t, i) => (
-          <div key={i}>
+          <div key={i} className={i === 0 && t.role === "assistant" ? "text-left" : ""}>
             <ChatMessage
               role={t.role}
               content={t.content}
