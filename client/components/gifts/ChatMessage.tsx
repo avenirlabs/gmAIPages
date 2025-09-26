@@ -45,12 +45,13 @@ export function ChatMessage({ role, content, products }: Props) {
 
       {/* Products grid spans full width */}
       {products && products.length > 0 && (
-        <div className="mt-4 w-full px-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+       <div className="mt-6 w-full">
+    <div className="container mx-auto px-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {products.map((p) => (
+          <ProductCard key={p.id} product={p} />
+        ))}
+      </div>
         </div>
       )}
     </div>
