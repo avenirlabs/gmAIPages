@@ -358,7 +358,7 @@ export function ChatInterface({
       </div>
 
       {/* Input controls with responsive container */}
-      <div className="border-t bg-background/80">
+<div className="sticky bottom-0 z-40 border-t bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
 <div className="w-full px-0 py-4 sm:py-6">
           {/* Active filters bar */}
           {activeFilterPills.length > 0 && (
