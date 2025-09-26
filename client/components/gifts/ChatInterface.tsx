@@ -261,7 +261,7 @@ export function ChatInterface({
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="mx-auto max-w-4xl border-b px-4 py-4 sm:px-6">
+     <div className="w-full">
         <h2 className="text-lg font-semibold text-[#155ca5]">Gifts Guru</h2>
         <p className="text-xs text-muted-foreground">
           Next-gen gifting intelligence at your fingertips. Tell it who you're
