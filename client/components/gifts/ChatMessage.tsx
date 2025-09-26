@@ -34,7 +34,7 @@ export function ChatMessage({ role, content, products }: Props) {
   : "bg-[#F0F5F9] text-foreground rounded-bl-sm shadow-sm border border-gray-200",
             )}
           >
-            <p className="whitespace-pre-wrap font-mono lg:font-sans">{content}</p>
+<p className="whitespace-pre-wrap">{content}</p>
           </div>
           {isUser && (
             <div aria-hidden="true"
@@ -46,10 +46,14 @@ export function ChatMessage({ role, content, products }: Props) {
       </div>
 
       {/* Products grid spans full width */}
-      {products && products.length > 0 && (
-      <section className="mt-8 w-full">
+     {products && products.length > 0 && (
+  <section className="mt-8 w-full">
     <div className="container mx-auto px-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold tracking-wide text-slate-600">Top matches</h3>
+        <span className="text-xs text-slate-500">{products.length} results</span>
+      </div>
+      <div className="animate-fadeIn grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
