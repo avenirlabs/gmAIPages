@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 type Props = {
   children: React.ReactNode;
   className?: string;          // extra classes for <main>
-  contentClassName?: string;   // extra classes for inner content
+  contentClassName?: string;   // extra classes for the inner content wrapper
 };
 
 export default function PageContainer({ children, className, contentClassName }: Props) {
