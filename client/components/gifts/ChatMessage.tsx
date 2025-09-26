@@ -27,12 +27,12 @@ export function ChatMessage({ role, content, products }: Props) {
             </div>
           )}
           <div
-            className={cn(
-              "max-w-[85%] rounded-2xl px-4 py-3 text-base leading-relaxed",
-              isUser
-                ? "bg-primary text-primary-foreground rounded-br-sm"
-  : "bg-[#F0F5F9] text-foreground rounded-bl-sm shadow-sm border border-gray-200",
-            )}
+          className={cn(
+  "max-w-[85%] rounded-2xl px-4 py-3 text-[15px] leading-7 md:text-base md:leading-7",
+  isUser
+    ? "bg-primary text-primary-foreground rounded-br-sm shadow-sm"
+    : "bg-white/90 text-foreground rounded-bl-sm border border-slate-200 shadow-sm ring-1 ring-black/5 backdrop-blur supports-[backdrop-filter]:bg-white/80",
+)}
           >
 <p className="whitespace-pre-wrap">{content}</p>
           </div>
