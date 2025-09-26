@@ -30,7 +30,7 @@ export function ChatMessage({ role, content, products }: Props) {
               "max-w-[85%] rounded-2xl px-4 py-3 text-base leading-relaxed",
               isUser
                 ? "bg-primary text-primary-foreground rounded-br-sm"
-                : "bg-[#F0F5F9] text-foreground rounded-bl-sm",
+  : "bg-[#F0F5F9] text-foreground rounded-bl-sm shadow-sm border border-gray-200",
             )}
           >
             <p className="whitespace-pre-wrap font-mono lg:font-sans">{content}</p>
