@@ -262,8 +262,8 @@ export function ChatInterface({
     <div className="w-full">
       {/* Header */}
      <div className="w-full">
-        <h2 className="text-lg font-semibold text-[#155ca5]">Gifts Guru</h2>
-        <p className="text-xs text-muted-foreground">
+        <h2 className="text-center text-3xl font-bold md:text-4xl">Gifts Guru</h2>
+<p className="mt-2 text-center text-lg md:text-xl text-gray-700">
           Next-gen gifting intelligence at your fingertips. Tell it who you're
           shopping for—let the magic unfold.
         </p>
