@@ -342,10 +342,12 @@ export function ChatInterface({
           </div>
         )}
         {mutate.isPending ? (
-          <div className="flex gap-2 px-2 text-sm text-muted-foreground">
-            <span className="mt-1 inline-block h-2 w-2 animate-bounce rounded-full bg-primary" />
-            Thinking...
-          </div>
+         <div className="ai-typing px-2" aria-live="polite">
+    <span className="sr-only">AI is typing…</span>
+    <span className="ai-typing-dot" />
+    <span className="ai-typing-dot" />
+    <span className="ai-typing-dot" />
+  </div>
         ) : null}
       </div>
 
