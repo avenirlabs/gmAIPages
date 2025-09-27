@@ -106,16 +106,72 @@ async function exportCategory(slug, limit = 24) {
   await writeJSON(path.join(OUT, "products", "category", `${slug}.json`), { products: items });
 }
 
+/* ---------------------- Menus ----------------------- */
+async function exportMenus() {
+  // Generate main navigation menu
+  // (In future, this could pull from Supabase or other CMS)
+  const mainMenu = {
+    items: [
+      { type: "link", label: "Home", to: "/" },
+      {
+        type: "mega",
+        label: "Shop",
+        columns: [
+          {
+            heading: "By Relationship",
+            links: [
+              { label: "Gifts for Him", to: "/gifts-him" },
+              { label: "Gifts for Her", to: "/gifts-her" },
+              { label: "For Parents", to: "/parents" },
+              { label: "For Kids", to: "/kids" }
+            ]
+          },
+          {
+            heading: "By Occasion",
+            links: [
+              { label: "Diwali Gifts", to: "/diwali-gifts", badge: "Trending" },
+              { label: "Birthday", to: "/birthday" },
+              { label: "Anniversary", to: "/anniversary" },
+              { label: "Housewarming", to: "/housewarming" }
+            ]
+          },
+          {
+            heading: "By Category",
+            links: [
+              { label: "Personalized", to: "/personalized" },
+              { label: "Home & Decor", to: "/home-decor" },
+              { label: "Office & Desk", to: "/office-desk" },
+              { label: "Accessories", to: "/accessories" }
+            ]
+          }
+        ],
+        promo: {
+          title: "Corporate Gifting",
+          text: "Curated catalog, bulk pricing, brand-ready.",
+          to: "/corporate-gifts"
+        }
+      },
+      { type: "link", label: "Corporate Gifts", to: "/corporate-gifts" },
+      { type: "link", label: "Diwali Gifts", to: "/diwali-gifts" }
+    ]
+  };
+
+  await writeJSON(path.join(OUT, "menus", "main.json"), mainMenu);
+}
+
 /* --------------------- Entry point ------------------------ */
 (async () => {
   // 1) Pages
   await exportPages();
 
-  // 2) Core product snapshots
+  // 2) Menus
+  await exportMenus();
+
+  // 3) Core product snapshots
   await exportFeatured();
   await exportBestSellers();
 
-  // 3) Key categories (edit this list or fetch from DB if you store them)
+  // 4) Key categories (edit this list or fetch from DB if you store them)
   const categories = ["dad-gifts", "mom-gifts", "anniversary", "diwali"];
   for (const c of categories) {
     await exportCategory(c);

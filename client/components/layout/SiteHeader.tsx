@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import clsx from "clsx";
+import { fetchStaticFirst } from "@/lib/staticFirst";
 
 type NavItem =
   | { type: "link"; label: string; to: string }
@@ -15,7 +16,8 @@ type NavItem =
       promo?: { title: string; text: string; to: string };
     };
 
-const NAV: NavItem[] = [
+// Fallback NAV used if static JSON is missing
+const FALLBACK_NAV: NavItem[] = [
   { type: "link", label: "Home", to: "/" },
   {
     type: "mega",
@@ -27,8 +29,8 @@ const NAV: NavItem[] = [
           { label: "Gifts for Him", to: "/gifts-him" },
           { label: "Gifts for Her", to: "/gifts-her" },
           { label: "For Parents", to: "/parents" },
-          { label: "For Kids", to: "/kids" },
-        ],
+          { label: "For Kids", to: "/kids" }
+        ]
       },
       {
         heading: "By Occasion",
@@ -36,8 +38,8 @@ const NAV: NavItem[] = [
           { label: "Diwali Gifts", to: "/diwali-gifts", badge: "Trending" },
           { label: "Birthday", to: "/birthday" },
           { label: "Anniversary", to: "/anniversary" },
-          { label: "Housewarming", to: "/housewarming" },
-        ],
+          { label: "Housewarming", to: "/housewarming" }
+        ]
       },
       {
         heading: "By Category",
@@ -45,18 +47,18 @@ const NAV: NavItem[] = [
           { label: "Personalized", to: "/personalized" },
           { label: "Home & Decor", to: "/home-decor" },
           { label: "Office & Desk", to: "/office-desk" },
-          { label: "Accessories", to: "/accessories" },
-        ],
-      },
+          { label: "Accessories", to: "/accessories" }
+        ]
+      }
     ],
     promo: {
       title: "Corporate Gifting",
       text: "Curated catalog, bulk pricing, brand-ready.",
-      to: "/corporate-gifts",
-    },
+      to: "/corporate-gifts"
+    }
   },
   { type: "link", label: "Corporate Gifts", to: "/corporate-gifts" },
-  { type: "link", label: "Diwali Gifts", to: "/diwali-gifts" },
+  { type: "link", label: "Diwali Gifts", to: "/diwali-gifts" }
 ];
 
 function MegaPanel({
@@ -124,6 +126,8 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [megaHover, setMegaHover] = useState(false);
+  // Runtime NAV state
+  const [nav, setNav] = useState<NavItem[]>(FALLBACK_NAV);
 
   // Close mega on Escape
   useEffect(() => {
@@ -150,6 +154,25 @@ export function SiteHeader() {
     }
   }, [open]);
 
+  // Load navigation menu (static-first)
+  useEffect(() => {
+    const ac = new AbortController();
+    (async () => {
+      try {
+        // Static-first: try CDN JSON, fallback (optional) to /api/menus/main
+        const data = await fetchStaticFirst<{ items: NavItem[] }>(
+          "/content/menus/main.json",
+          "/api/menus/main",
+          ac.signal
+        );
+        if (data?.items?.length) setNav(data.items);
+      } catch {
+        // ignore, fallback already in state
+      }
+    })();
+    return () => ac.abort();
+  }, []);
+
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -168,7 +191,7 @@ export function SiteHeader() {
             setTimeout(() => !megaHover && setMegaOpen(false), 60);
           }}
         >
-          {NAV.map((item, idx) => {
+          {nav.map((item, idx) => {
             if (item.type === "link") {
               return (
                 <a
@@ -266,7 +289,7 @@ export function SiteHeader() {
       >
         <nav className="container mx-auto px-4 py-3 sm:px-6">
           <ul className="flex flex-col divide-y divide-slate-200/60">
-            {NAV.map((item, i) => {
+            {nav.map((item, i) => {
               if (item.type === "link") {
                 return (
                   <li key={i}>
