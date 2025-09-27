@@ -1,0 +1,22 @@
+{
+  "products": [
+    {
+      "id": 5,
+      "name": "Bestselling Smartphone Case",
+      "link": "https://example.com/product/5",
+      "image": "https://via.placeholder.com/300x300?text=Phone+Case",
+      "price": 599,
+      "regular_price": 899,
+      "sale_price": 599
+    },
+    {
+      "id": 6,
+      "name": "Popular Gaming Mouse",
+      "link": "https://example.com/product/6",
+      "image": "https://via.placeholder.com/300x300?text=Mouse",
+      "price": 1999,
+      "regular_price": 1999,
+      "sale_price": 0
+    }
+  ]
+}

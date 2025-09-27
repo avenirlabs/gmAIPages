@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
 import { CARD_IMAGE_ASPECT } from "@/config/ui";
+import { fetchStaticFirst } from "@/lib/staticFirst";
 
 interface FeaturedProduct {
   id: number;
@@ -30,28 +31,46 @@ export function FeaturedGrid({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-    const params = new URLSearchParams();
-    params.set("source", source);
-    if (categorySlug) params.set("category_slug", categorySlug);
-    params.set("per_page", String(limit));
-    fetch(`/api/woocommerce/products?${params.toString()}`)
-      .then(async (r) => {
-        if (!r.ok) throw new Error(await r.text());
-        return r.json();
-      })
-      .then((d) => {
-        if (!mounted) return;
-        setItems((d?.products as FeaturedProduct[]) || []);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setError("Could not load products");
-        setItems([]);
-      });
-    return () => {
-      mounted = false;
-    };
+    let isCancelled = false;
+
+    async function load() {
+      // 1) Decide which static JSON to try first
+      let staticUrl: string | null = null;
+      if (source === "featured") {
+        staticUrl = "/content/products/featured.json";
+      } else if (source === "best_sellers") {
+        staticUrl = "/content/products/best_sellers.json";
+      } else if (source === "category" && categorySlug) {
+        staticUrl = `/content/products/category/${encodeURIComponent(categorySlug)}.json`;
+      }
+
+      // 2) Your existing API endpoint (fallback)
+      const apiUrl = `/api/woocommerce/products?source=${encodeURIComponent(source)}${
+        categorySlug ? `&category_slug=${encodeURIComponent(categorySlug)}` : ""
+      }${limit ? `&per_page=${limit}` : ""}`;
+
+      try {
+        // 3) Static-first fetch
+        const data = await fetchStaticFirst<{ products: FeaturedProduct[] }>(staticUrl, apiUrl);
+
+        if (!isCancelled) {
+          if (data?.products) {
+            setItems(data.products.slice(0, limit || 999));
+          } else {
+            setItems([]);
+          }
+          setError(null);
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          setError("Could not load products");
+          setItems([]);
+        }
+      }
+    }
+
+    load();
+    return () => { isCancelled = true; };
   }, [source, categorySlug, limit]);
 
   return (

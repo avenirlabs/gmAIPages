@@ -1,0 +1,40 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Wireless Bluetooth Headphones",
+      "link": "https://example.com/product/1",
+      "image": "https://via.placeholder.com/300x300?text=Headphones",
+      "price": 2999,
+      "regular_price": 3999,
+      "sale_price": 2999
+    },
+    {
+      "id": 2,
+      "name": "Smart Fitness Watch",
+      "link": "https://example.com/product/2",
+      "image": "https://via.placeholder.com/300x300?text=Watch",
+      "price": 4999,
+      "regular_price": 4999,
+      "sale_price": 0
+    },
+    {
+      "id": 3,
+      "name": "Premium Coffee Maker",
+      "link": "https://example.com/product/3",
+      "image": "https://via.placeholder.com/300x300?text=Coffee",
+      "price": 8999,
+      "regular_price": 8999,
+      "sale_price": 0
+    },
+    {
+      "id": 4,
+      "name": "Ergonomic Office Chair",
+      "link": "https://example.com/product/4",
+      "image": "https://via.placeholder.com/300x300?text=Chair",
+      "price": 12999,
+      "regular_price": 15999,
+      "sale_price": 12999
+    }
+  ]
+}

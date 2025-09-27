@@ -1,0 +1,22 @@
+{
+  "products": [
+    {
+      "id": 7,
+      "name": "Wireless Power Bank",
+      "link": "https://example.com/product/7",
+      "image": "https://via.placeholder.com/300x300?text=Power+Bank",
+      "price": 1499,
+      "regular_price": 1499,
+      "sale_price": 0
+    },
+    {
+      "id": 8,
+      "name": "Bluetooth Speaker",
+      "link": "https://example.com/product/8",
+      "image": "https://via.placeholder.com/300x300?text=Speaker",
+      "price": 2499,
+      "regular_price": 3499,
+      "sale_price": 2499
+    }
+  ]
+}
