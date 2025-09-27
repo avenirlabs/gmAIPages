@@ -76,7 +76,7 @@ function MegaPanel({
       role="menu"
       aria-label="Shop menu"
       tabIndex={-1}
-      className="absolute left-1/2 top-full z-[60] w-[min(1100px,90vw)] -translate-x-1/2 rounded-2xl border border-slate-200/70 bg-white/95 p-6 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/80"
+      className="absolute left-1/2 top-full z-[60] w-[min(1100px,90vw)] -translate-x-1/2 rounded-2xl border border-slate-200/80 bg-white/98 p-6 shadow-2xl backdrop-blur-sm supports-[backdrop-filter]:bg-white/90"
     >
       <div className="grid grid-cols-3 gap-6">
         {columns.map((col, idx) => (
