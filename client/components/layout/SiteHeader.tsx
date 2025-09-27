@@ -60,14 +60,22 @@ const NAV: NavItem[] = [
 ];
 
 function MegaPanel({
+  id,
   columns,
   promo,
 }: {
+  id: string;
   columns: Array<{ heading: string; links: Array<{ label: string; to: string; badge?: string }> }>;
   promo?: { title: string; text: string; to: string };
 }) {
   return (
-    <div className="absolute left-1/2 top-full z-40 w-[min(1100px,90vw)] -translate-x-1/2 rounded-2xl border border-slate-200/70 bg-white/95 p-6 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/80">
+    <div
+      id={id}
+      role="menu"
+      aria-label="Shop menu"
+      tabIndex={-1}
+      className="absolute left-1/2 top-full z-40 w-[min(1100px,90vw)] -translate-x-1/2 rounded-2xl border border-slate-200/70 bg-white/95 p-6 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/80"
+    >
       <div className="grid grid-cols-3 gap-6">
         {columns.map((col, idx) => (
           <div key={idx} className="min-w-0">
@@ -79,7 +87,8 @@ function MegaPanel({
                 <li key={l.to}>
                   <a
                     href={l.to}
-                    className="group flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-slate-800 transition hover:bg-slate-50"
+                    role="menuitem"
+                    className="group flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-slate-800 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#155ca5]/30"
                   >
                     <span className="truncate">{l.label}</span>
                     {l.badge ? (
@@ -115,6 +124,15 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [megaHover, setMegaHover] = useState(false);
+
+  // Close mega on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMegaOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Close mobile menu on route change (optional safety if you use router navigation elsewhere)
   useEffect(() => {
@@ -175,8 +193,19 @@ export function SiteHeader() {
               >
                 <button
                   type="button"
-                  className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
+                  className="text-sm font-medium text-slate-700 transition hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#155ca5]/40 rounded-md px-1"
                   aria-expanded={megaOpen}
+                  aria-haspopup="true"
+                  aria-controls="mega-shop"
+                  onFocus={() => setMegaOpen(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      setMegaOpen(true);
+                      // move focus into panel on ArrowDown
+                      const first = document.querySelector<HTMLAnchorElement>('#mega-shop a, #mega-shop button');
+                      first?.focus();
+                    }
+                  }}
                 >
                   {item.label}
                 </button>
@@ -190,7 +219,7 @@ export function SiteHeader() {
                       setTimeout(() => !megaHover && setMegaOpen(false), 80);
                     }}
                   >
-                    <MegaPanel columns={item.columns} promo={item.promo} />
+                    <MegaPanel id="mega-shop" columns={item.columns} promo={item.promo} />
                   </div>
                 )}
               </div>
@@ -216,6 +245,16 @@ export function SiteHeader() {
           <span className="sr-only">Toggle menu</span>
         </button>
       </div>
+
+      {/* Desktop overlay to close mega menu on outside click */}
+      {megaOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-30 hidden lg:block"
+          aria-label="Close menu overlay"
+          onClick={() => setMegaOpen(false)}
+        />
+      )}
 
       {/* Mobile panel */}
       <div
