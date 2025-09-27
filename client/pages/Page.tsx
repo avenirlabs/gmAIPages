@@ -26,14 +26,12 @@ export default function Page() {
     const ac = new AbortController();
     (async () => {
       try {
-        const r = await fetch(`/api/pages/${encodeURIComponent(slug)}`, {
-          signal: ac.signal,
-        });
-        if (!r.ok) {
-          setPage(null);
-          return;
-        }
-        const d = (await r.json()) as PageRow | null;
+        const { fetchStaticFirst } = await import("@/lib/staticFirst");
+        const d = await fetchStaticFirst<PageRow>(
+          `/content/pages/${encodeURIComponent(slug)}.json`,
+          `/api/pages/${encodeURIComponent(slug)}`,
+          ac.signal
+        );
         setPage(d || null);
       } catch (_) {
         setPage(null);
