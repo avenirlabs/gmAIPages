@@ -1,0 +1,27 @@
+[build]
+  command = "pnpm run build:client"
+  publish = "dist/spa"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Security and CSP headers (allow app JS/CSS and required connections)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:; connect-src 'self' https://*; worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+
+[[redirects]]
+  force = true
+  from = "/api/*"
+  status = 200
+  to = "/.netlify/functions/api/:splat"
+
+# SPA fallback for client routing (e.g., /admin, /:slug)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

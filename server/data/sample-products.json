@@ -1,0 +1,134 @@
+[
+  {
+    "id": "p1",
+    "title": "Cast Iron Skillet Set",
+    "description": "Durable cast iron pans for the home chef.",
+    "price": 49.99,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1604908177074-4b96f1650145?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/cast-iron-skillet",
+    "tags": ["cooking", "kitchen", "for her", "birthday"],
+    "vendor": "KitchenPro"
+  },
+  {
+    "id": "p2",
+    "title": "Premium Makeup Brush Kit",
+    "description": "Silky soft brushes in a vegan leather case.",
+    "price": 39.0,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1582092722416-c8112a89af12?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/makeup-brush-kit",
+    "tags": ["makeup", "beauty", "for her", "anniversary"],
+    "vendor": "GlowLab"
+  },
+  {
+    "id": "p3",
+    "title": "Smart Fitness Band",
+    "description": "Track workouts, sleep, and heart rate.",
+    "price": 59.99,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1519865885898-a54a6f2c7eea?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/smart-fitness-band",
+    "tags": ["gym", "fitness", "tech", "for him", "birthday"],
+    "vendor": "FitTech"
+  },
+  {
+    "id": "p4",
+    "title": "Barista Coffee Maker",
+    "description": "Café-style espresso at home.",
+    "price": 129.0,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1517705008128-361805f42e86?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/barista-coffee-maker",
+    "tags": ["coffee", "kitchen", "anniversary", "eco-friendly"],
+    "vendor": "BrewMaster"
+  },
+  {
+    "id": "p5",
+    "title": "Scented Candle Set",
+    "description": "Hand-poured soy candles with essential oils.",
+    "price": 24.5,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1509005084666-3cbc3d47a439?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/scented-candle-set",
+    "tags": ["home", "relax", "for her", "under $50"],
+    "vendor": "Calm&Co"
+  },
+  {
+    "id": "p6",
+    "title": "Eco-friendly Yoga Mat",
+    "description": "Non-slip natural rubber with carrying strap.",
+    "price": 45.0,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1599058917212-d750089bc07c?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/eco-yoga-mat",
+    "tags": ["gym", "yoga", "eco-friendly", "for her", "under $50"],
+    "vendor": "ZenLife"
+  },
+  {
+    "id": "p7",
+    "title": "Gourmet Chocolate Box",
+    "description": "Artisan dark and milk selections.",
+    "price": 29.99,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1548907040-4bf3a5c2ad67?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/gourmet-chocolate",
+    "tags": ["sweet", "birthday", "anniversary", "for her"],
+    "vendor": "CocoaCraft"
+  },
+  {
+    "id": "p8",
+    "title": "Compact Drone with Camera",
+    "description": "Stabilized 4K camera, beginner-friendly.",
+    "price": 199.0,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/compact-drone",
+    "tags": ["tech", "outdoors", "for him"],
+    "vendor": "SkySnap"
+  },
+  {
+    "id": "p9",
+    "title": "Artisanal Tea Sampler",
+    "description": "Curated loose-leaf teas from around the world.",
+    "price": 22.0,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1509401934319-c03c78b1b8b1?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/tea-sampler",
+    "tags": ["tea", "home", "under $50"],
+    "vendor": "Leaf&Loom"
+  },
+  {
+    "id": "p10",
+    "title": "Portable Projector",
+    "description": "Movie nights anywhere with HDMI and Wi‑Fi.",
+    "price": 149.99,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/portable-projector",
+    "tags": ["tech", "home", "for him"],
+    "vendor": "BrightBeam"
+  },
+  {
+    "id": "p11",
+    "title": "Skincare Essentials Set",
+    "description": "Gentle daily routine for glowing skin.",
+    "price": 54.0,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/skincare-essentials",
+    "tags": ["beauty", "makeup", "for her"],
+    "vendor": "PureGlow"
+  },
+  {
+    "id": "p12",
+    "title": "Chef's Knife 8\"",
+    "description": "Precision stainless steel with ergonomic handle.",
+    "price": 59.0,
+    "currency": "USD",
+    "image": "https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?q=80&w=800&auto=format&fit=crop",
+    "url": "https://example.com/products/chefs-knife",
+    "tags": ["cooking", "kitchen", "for her", "for him"],
+    "vendor": "EdgePro"
+  }
+]

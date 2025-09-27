@@ -1,0 +1,135 @@
+/** @import must precede all other statements */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /**
+   * Tailwind CSS theme
+   * tailwind.config.ts expects the following color variables to be expressed as HSL values.
+   * A different format will require also updating the theme in tailwind.config.ts.
+  */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 232 84% 5%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 232 84% 5%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 232 84% 5%;
+
+    --primary: 211 77% 36%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 100% 93%;
+    --secondary-foreground: 211 77% 20%;
+
+    --muted: 210 45% 96%;
+    --muted-foreground: 226 15% 35%;
+
+    --accent: 210 100% 93%;
+    --accent-foreground: 211 77% 20%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 24% 90%;
+    --input: 210 24% 92%;
+    --ring: 211 77% 36%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 210 100% 95%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 211 77% 36%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 210 100% 93%;
+
+    --sidebar-accent-foreground: 211 77% 20%;
+
+    --sidebar-border: 210 20% 90%;
+
+    --sidebar-ring: 211 77% 36%;
+  }
+
+  .dark {
+    --background: 248 22% 9%;
+    --foreground: 0 0% 100%;
+
+    --card: 248 22% 9%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 248 22% 9%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 0 0% 100%;
+    --primary-foreground: 248 22% 9%;
+
+    --secondary: 248 15% 16%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 248 15% 16%;
+    --muted-foreground: 240 5% 64%;
+
+    --accent: 268 45% 20%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 31%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 248 15% 16%;
+    --input: 248 15% 16%;
+    --ring: 268 83% 58%;
+    --sidebar-background: 248 22% 9%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 268 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 248 15% 16%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 248 15% 16%;
+    --sidebar-ring: 268 83% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+@layer utilities {
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  .animate-fadeIn { animation: fadeIn 0.35s ease-in; }
+}
+@layer utilities {
+  /* 3-dot typing indicator */
+  @keyframes ai-dot {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-3px); opacity: 1; }
+  }
+  .ai-typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+  }
+  .ai-typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: hsl(var(--primary));
+    animation: ai-dot 1.1s infinite ease-in-out;
+    display: inline-block;
+  }
+  .ai-typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .ai-typing-dot:nth-child(3) { animation-delay: 0.3s; }
+}
