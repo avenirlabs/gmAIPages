@@ -80,7 +80,7 @@ function MegaPanel({
     >
       <div className="grid grid-cols-3 gap-6">
         {columns.map((col, idx) => (
-          <div key={idx} className="min-w-0">
+          <div key={idx} className="min-w-0 border-r border-slate-200/50 last:border-r-0 px-3">
             <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
               {col.heading}
             </h4>
@@ -90,7 +90,7 @@ function MegaPanel({
                   <a
                     href={l.to}
                     role="menuitem"
-                    className="group flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-slate-800 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#155ca5]/30"
+                    className="group flex items-center justify-between rounded-md px-2 py-2 text-sm text-slate-800 border-b border-slate-200/60 last:border-b-0 transition-colors duration-150 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#155ca5]/30"
                   >
                     <span className="truncate">{l.label}</span>
                     {l.badge ? (
