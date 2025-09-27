@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import MenuEditor from "@/components/admin/MenuEditor";
 
 interface PageRow {
   id: string;
@@ -38,7 +39,7 @@ export default function Admin() {
   const [chipDraft, setChipDraft] = useState("");
   const [navLinks, setNavLinks] = useState<NavLinkRow[]>([]);
   const [navLoading, setNavLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"pages">("pages");
+  const [activeTab, setActiveTab] = useState<"pages" | "navigation">("pages");
 
   useEffect(() => {
     supabase.auth
@@ -180,6 +181,7 @@ export default function Admin() {
     setActive(null);
   };
 
+
   if (!session) {
     return (
       <div className="mx-auto grid min-h-screen max-w-md place-items-center p-6">
@@ -231,17 +233,46 @@ export default function Admin() {
   return (
     <div className="mx-auto grid min-h-screen max-w-6xl grid-rows-[auto_auto_1fr] gap-4 p-4">
       <header className="flex items-center justify-between rounded-xl border bg-[#DBEBFF] px-4 py-3">
-        <h1 className="text-lg font-semibold text-[#155ca5]">Admin Dashboard</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-semibold text-[#155ca5]">Admin Dashboard</h1>
+          <div className="flex gap-1 rounded-lg bg-white/50 p-1">
+            <button
+              onClick={() => setActiveTab("pages")}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                activeTab === "pages"
+                  ? "bg-white text-[#155ca5] shadow-sm"
+                  : "text-[#155ca5]/70 hover:text-[#155ca5]"
+              )}
+            >
+              Pages
+            </button>
+            <button
+              onClick={() => setActiveTab("navigation")}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                activeTab === "navigation"
+                  ? "bg-white text-[#155ca5] shadow-sm"
+                  : "text-[#155ca5]/70 hover:text-[#155ca5]"
+              )}
+            >
+              Navigation
+            </button>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={startNew}>
-            New Page
-          </Button>
+          {activeTab === "pages" && (
+            <Button variant="secondary" onClick={startNew}>
+              New Page
+            </Button>
+          )}
           <Button variant="ghost" onClick={handleLogout}>
             Logout
           </Button>
         </div>
       </header>
 
+      {activeTab === "pages" ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
           <aside className="rounded-xl border bg-white p-3">
             <input
@@ -630,151 +661,11 @@ export default function Admin() {
             </Button>
           </div>
         </section>
-
-        <section className="mt-6 rounded-xl border bg-white p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-[#155ca5]">Navigation</h2>
-            <Button
-            variant="secondary"
-            onClick={() =>
-              setNavLinks([
-                ...navLinks,
-                {
-                  label: "New Link",
-                  href: "/",
-                  position: navLinks.length,
-                  visible: true,
-                },
-              ])
-            }
-          >
-            Add Link
-          </Button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground">
-                <th className="p-2">Label</th>
-                <th className="p-2">Href</th>
-                <th className="p-2">Position</th>
-                <th className="p-2">Visible</th>
-                <th className="p-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {navLinks.map((r, i) => (
-                <tr key={r.id || i} className="border-t">
-                  <td className="p-2">
-                    <input
-                      value={r.label}
-                      onChange={(e) => {
-                        const next = [...navLinks];
-                        next[i] = { ...r, label: e.target.value } as NavLinkRow;
-                        setNavLinks(next);
-                      }}
-                      className="w-full rounded-md border px-2 py-1"
-                    />
-                  </td>
-                  <td className="p-2">
-                    <input
-                      value={r.href}
-                      onChange={(e) => {
-                        const next = [...navLinks];
-                        next[i] = { ...r, href: e.target.value } as NavLinkRow;
-                        setNavLinks(next);
-                      }}
-                      className="w-full rounded-md border px-2 py-1"
-                    />
-                  </td>
-                  <td className="p-2 w-28">
-                    <input
-                      type="number"
-                      value={r.position}
-                      onChange={(e) => {
-                        const next = [...navLinks];
-                        next[i] = {
-                          ...r,
-                          position: Number(e.target.value),
-                        } as NavLinkRow;
-                        setNavLinks(next);
-                      }}
-                      className="w-full rounded-md border px-2 py-1"
-                    />
-                  </td>
-                  <td className="p-2 w-24">
-                    <input
-                      type="checkbox"
-                      checked={r.visible}
-                      onChange={(e) => {
-                        const next = [...navLinks];
-                        next[i] = {
-                          ...r,
-                          visible: e.target.checked,
-                        } as NavLinkRow;
-                        setNavLinks(next);
-                      }}
-                    />
-                  </td>
-                  <td className="p-2 w-40 text-right">
-                    <Button
-                      size="sm"
-                      onClick={async () => {
-                        const payload: any = {
-                          label: r.label?.trim() || "",
-                          href: r.href?.trim() || "/",
-                          position: r.position ?? 0,
-                          visible: !!r.visible,
-                        };
-                        if (r.id) payload.id = r.id;
-                        const { data, error } = await supabase
-                          .from("nav_links")
-                          .upsert(payload)
-                          .select("id, label, href, position, visible")
-                          .single();
-                        if (!error && data) {
-                          const next = [...navLinks];
-                          next[i] = data as NavLinkRow;
-                          setNavLinks(next);
-                        }
-                      }}
-                    >
-                      Save
-                    </Button>
-                    {r.id ? (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="ml-2"
-                        onClick={async () => {
-                          await supabase
-                            .from("nav_links")
-                            .delete()
-                            .eq("id", r.id);
-                          setNavLinks(navLinks.filter((x) => x !== r));
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
-              {navLinks.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="p-4 text-center text-xs text-muted-foreground"
-                  >
-                    {navLoading ? "Loading..." : "No links yet. Add one."}
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </section>
-        </div>
+      ) : (
+        // Navigation Tab Content - Visual Editor
+        <MenuEditor />
+      )}
     </div>
   );
 }

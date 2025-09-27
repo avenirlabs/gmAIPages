@@ -20,6 +20,7 @@ import { handleDemo } from "./routes/demo";
 import { handleChat } from "./routes/gifts";
 import { getHome, getBySlug, refreshAll } from "./routes/pages";
 import { getNavLinks } from "./routes/nav";
+import { getMenu, updateMenu } from "./routes/menus";
 import {
   getFeaturedProducts,
   getProducts,
@@ -46,7 +47,7 @@ export function createServer() {
   app.use(
     cors({
       origin: origins.length ? origins : undefined,
-      methods: ["GET", "POST", "OPTIONS"],
+      methods: ["GET", "POST", "PUT", "OPTIONS"],
       credentials: false,
     }),
   );
@@ -137,6 +138,10 @@ export function createServer() {
 
   // Nav links
   map("get", "/api/nav/links", getNavLinks);
+
+  // Menu routes
+  map("get", "/api/menus/main", getMenu);
+  map("put", "/api/menus/main", updateMenu);
 
   // Gift chat route (tighter rate limit)
   (app as any).post("/api/gifts/chat", giftsLimiter, handleChat);

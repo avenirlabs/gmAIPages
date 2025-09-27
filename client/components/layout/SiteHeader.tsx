@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import clsx from "clsx";
@@ -76,7 +77,7 @@ function MegaPanel({
       role="menu"
       aria-label="Shop menu"
       tabIndex={-1}
-      className="absolute left-1/2 top-full z-[60] w-[min(1100px,90vw)] -translate-x-1/2 rounded-2xl border border-slate-200/80 bg-white/98 p-6 shadow-2xl backdrop-blur-sm supports-[backdrop-filter]:bg-white/90"
+      className="relative z-[60] w-[min(1100px,90vw)] rounded-2xl border border-slate-200/80 bg-white/98 p-6 shadow-2xl backdrop-blur-sm supports-[backdrop-filter]:bg-white/90"
     >
       <div className="grid grid-cols-3 gap-6">
         {columns.map((col, idx) => (
@@ -234,17 +235,21 @@ export function SiteHeader() {
                 </button>
 
                 {/* Mega dropdown (desktop only) */}
-                {megaOpen && (
-                  <div
-                    onMouseEnter={() => setMegaHover(true)}
-                    onMouseLeave={() => {
-                      setMegaHover(false);
-                      setTimeout(() => !megaHover && setMegaOpen(false), 80);
-                    }}
-                  >
-                    <MegaPanel id="mega-shop" columns={item.columns} promo={item.promo} />
-                  </div>
-                )}
+                {megaOpen &&
+                  createPortal(
+                    <div
+                      onMouseEnter={() => setMegaHover(true)}
+                      onMouseLeave={() => {
+                        setMegaHover(false);
+                        setTimeout(() => !megaHover && setMegaOpen(false), 80);
+                      }}
+                      className="fixed left-0 right-0 top-16 z-[60] flex justify-center"
+                    >
+                      <MegaPanel id="mega-shop" columns={item.columns} promo={item.promo} />
+                    </div>,
+                    document.body
+                  )
+                }
               </div>
             );
           })}
@@ -270,14 +275,17 @@ export function SiteHeader() {
       </div>
 
       {/* Desktop overlay to close mega menu on outside click */}
-      {megaOpen && (
-        <button
-          type="button"
-          className="fixed inset-0 z-[55] hidden bg-black/10 lg:block"
-          aria-label="Close menu overlay"
-          onClick={() => setMegaOpen(false)}
-        />
-      )}
+      {megaOpen &&
+        createPortal(
+          <button
+            type="button"
+            className="fixed inset-0 z-[55] hidden bg-black/10 lg:block"
+            aria-label="Close menu overlay"
+            onClick={() => setMegaOpen(false)}
+          />,
+          document.body
+        )
+      }
 
       {/* Mobile panel */}
       <div
