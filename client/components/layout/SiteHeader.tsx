@@ -3,19 +3,118 @@ import { Link, NavLink } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import clsx from "clsx";
 
-/**
- * Simple nav model.
- * If you already load nav items from your backend, replace NAV with that data.
- */
-const NAV: Array<{ label: string; to: string }> = [
-  { label: "Home", to: "/" },
-  { label: "Corporate Gifts", to: "/corporate-gifts" },
-  { label: "Gifts for Him", to: "/gifts-him" },
-  { label: "Diwali Gifts", to: "/diwali-gifts" },
+type NavItem =
+  | { type: "link"; label: string; to: string }
+  | {
+      type: "mega";
+      label: string;
+      columns: Array<{
+        heading: string;
+        links: Array<{ label: string; to: string; badge?: string }>;
+      }>;
+      promo?: { title: string; text: string; to: string };
+    };
+
+const NAV: NavItem[] = [
+  { type: "link", label: "Home", to: "/" },
+  {
+    type: "mega",
+    label: "Shop",
+    columns: [
+      {
+        heading: "By Relationship",
+        links: [
+          { label: "Gifts for Him", to: "/gifts-him" },
+          { label: "Gifts for Her", to: "/gifts-her" },
+          { label: "For Parents", to: "/parents" },
+          { label: "For Kids", to: "/kids" },
+        ],
+      },
+      {
+        heading: "By Occasion",
+        links: [
+          { label: "Diwali Gifts", to: "/diwali-gifts", badge: "Trending" },
+          { label: "Birthday", to: "/birthday" },
+          { label: "Anniversary", to: "/anniversary" },
+          { label: "Housewarming", to: "/housewarming" },
+        ],
+      },
+      {
+        heading: "By Category",
+        links: [
+          { label: "Personalized", to: "/personalized" },
+          { label: "Home & Decor", to: "/home-decor" },
+          { label: "Office & Desk", to: "/office-desk" },
+          { label: "Accessories", to: "/accessories" },
+        ],
+      },
+    ],
+    promo: {
+      title: "Corporate Gifting",
+      text: "Curated catalog, bulk pricing, brand-ready.",
+      to: "/corporate-gifts",
+    },
+  },
+  { type: "link", label: "Corporate Gifts", to: "/corporate-gifts" },
+  { type: "link", label: "Diwali Gifts", to: "/diwali-gifts" },
 ];
+
+function MegaPanel({
+  columns,
+  promo,
+}: {
+  columns: Array<{ heading: string; links: Array<{ label: string; to: string; badge?: string }> }>;
+  promo?: { title: string; text: string; to: string };
+}) {
+  return (
+    <div className="absolute left-1/2 top-full z-40 w-[min(1100px,90vw)] -translate-x-1/2 rounded-2xl border border-slate-200/70 bg-white/95 p-6 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/80">
+      <div className="grid grid-cols-3 gap-6">
+        {columns.map((col, idx) => (
+          <div key={idx} className="min-w-0">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {col.heading}
+            </h4>
+            <ul className="space-y-1.5">
+              {col.links.map((l) => (
+                <li key={l.to}>
+                  <a
+                    href={l.to}
+                    className="group flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-slate-800 transition hover:bg-slate-50"
+                  >
+                    <span className="truncate">{l.label}</span>
+                    {l.badge ? (
+                      <span className="ml-2 rounded-full bg-[#DBEBFF] px-2 py-0.5 text-[11px] font-medium text-[#155ca5]">
+                        {l.badge}
+                      </span>
+                    ) : null}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+
+        {promo ? (
+          <div className="col-span-3 mt-4 rounded-xl border border-slate-200/70 bg-gradient-to-br from-[#DBEBFF]/60 to-white p-4 sm:col-span-1 sm:mt-0">
+            <div className="text-sm font-semibold text-slate-900">{promo.title}</div>
+            <p className="mt-1 text-sm text-slate-700">{promo.text}</p>
+            <a
+              href={promo.to}
+              className="mt-3 inline-flex rounded-full bg-[#155ca5] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#134a93]"
+            >
+              Explore
+            </a>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [megaOpen, setMegaOpen] = useState(false);
+  const [megaHover, setMegaHover] = useState(false);
 
   // Close mobile menu on route change (optional safety if you use router navigation elsewhere)
   useEffect(() => {
@@ -44,23 +143,59 @@ export function SiteHeader() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 lg:flex">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                clsx(
-                  "text-sm font-medium transition",
-                  isActive
-                    ? "text-[#155ca5]"
-                    : "text-slate-700 hover:text-slate-900"
-                )
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
+        <nav
+          className="relative hidden items-center gap-6 lg:flex"
+          onMouseLeave={() => {
+            setMegaHover(false);
+            setTimeout(() => !megaHover && setMegaOpen(false), 60);
+          }}
+        >
+          {NAV.map((item, idx) => {
+            if (item.type === "link") {
+              return (
+                <a
+                  key={idx}
+                  href={item.to}
+                  className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
+                >
+                  {item.label}
+                </a>
+              );
+            }
+
+            // type === 'mega'
+            return (
+              <div
+                key={idx}
+                className="relative"
+                onMouseEnter={() => {
+                  setMegaHover(true);
+                  setMegaOpen(true);
+                }}
+              >
+                <button
+                  type="button"
+                  className="text-sm font-medium text-slate-700 transition hover:text-slate-900"
+                  aria-expanded={megaOpen}
+                >
+                  {item.label}
+                </button>
+
+                {/* Mega dropdown (desktop only) */}
+                {megaOpen && (
+                  <div
+                    onMouseEnter={() => setMegaHover(true)}
+                    onMouseLeave={() => {
+                      setMegaHover(false);
+                      setTimeout(() => !megaHover && setMegaOpen(false), 80);
+                    }}
+                  >
+                    <MegaPanel columns={item.columns} promo={item.promo} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         {/* Desktop right-side actions (optional placeholder) */}
@@ -92,25 +227,67 @@ export function SiteHeader() {
       >
         <nav className="container mx-auto px-4 py-3 sm:px-6">
           <ul className="flex flex-col divide-y divide-slate-200/60">
-            {NAV.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center justify-between py-3 text-base",
-                      isActive
-                        ? "font-semibold text-[#155ca5]"
-                        : "text-slate-800"
-                    )
-                  }
-                >
-                  <span>{item.label}</span>
-                  {/* chevron could be added here if you have nested items */}
-                </NavLink>
-              </li>
-            ))}
+            {NAV.map((item, i) => {
+              if (item.type === "link") {
+                return (
+                  <li key={i}>
+                    <a
+                      href={item.to}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center justify-between py-3 text-base text-slate-800"
+                    >
+                      <span>{item.label}</span>
+                    </a>
+                  </li>
+                );
+              }
+
+              // type === 'mega' -> flatten
+              return (
+                <li key={i} className="py-2">
+                  <div className="py-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {item.label}
+                  </div>
+                  <div className="grid grid-cols-1 gap-2">
+                    {item.columns.map((col, ci) => (
+                      <div key={ci}>
+                        <div className="py-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                          {col.heading}
+                        </div>
+                        <ul className="divide-y divide-slate-200/60 rounded-lg border border-slate-200/60">
+                          {col.links.map((l) => (
+                            <li key={l.to}>
+                              <a
+                                href={l.to}
+                                onClick={() => setOpen(false)}
+                                className="flex items-center justify-between px-3 py-2 text-[15px] text-slate-800"
+                              >
+                                <span>{l.label}</span>
+                                {l.badge ? (
+                                  <span className="ml-2 rounded-full bg-[#DBEBFF] px-2 py-0.5 text-[11px] font-medium text-[#155ca5]">
+                                    {l.badge}
+                                  </span>
+                                ) : null}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                    {item.promo ? (
+                      <a
+                        href={item.promo.to}
+                        onClick={() => setOpen(false)}
+                        className="mt-2 rounded-lg border border-slate-200/60 bg-[#DBEBFF]/40 p-3 text-slate-800"
+                      >
+                        <div className="text-sm font-semibold">{item.promo.title}</div>
+                        <div className="text-sm">{item.promo.text}</div>
+                      </a>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
 
           {/* Optional: sticky actions at bottom of sheet */}
