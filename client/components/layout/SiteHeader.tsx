@@ -76,7 +76,7 @@ function MegaPanel({
       role="menu"
       aria-label="Shop menu"
       tabIndex={-1}
-      className="absolute left-1/2 top-full z-40 w-[min(1100px,90vw)] -translate-x-1/2 rounded-2xl border border-slate-200/70 bg-white/95 p-6 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/80"
+      className="absolute left-1/2 top-full z-[60] w-[min(1100px,90vw)] -translate-x-1/2 rounded-2xl border border-slate-200/70 bg-white/95 p-6 shadow-xl backdrop-blur supports-[backdrop-filter]:bg-white/80"
     >
       <div className="grid grid-cols-3 gap-6">
         {columns.map((col, idx) => (
@@ -273,7 +273,7 @@ export function SiteHeader() {
       {megaOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-30 hidden lg:block"
+          className="fixed inset-0 z-[55] hidden bg-black/10 lg:block"
           aria-label="Close menu overlay"
           onClick={() => setMegaOpen(false)}
         />
