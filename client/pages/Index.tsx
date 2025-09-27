@@ -19,12 +19,12 @@ export default function Index() {
     const ac = new AbortController();
     (async () => {
       try {
-        const r = await fetch("/api/pages/home", { signal: ac.signal });
-        if (!r.ok) {
-          setHome(null);
-          return;
-        }
-        const d = (await r.json()) as HomePageRow | null;
+        const { fetchStaticFirst } = await import("@/lib/staticFirst");
+        const d = await fetchStaticFirst<HomePageRow>(
+          "/content/pages/home.json",
+          "/api/pages/home",
+          ac.signal
+        );
         setHome(d || null);
       } catch (_) {
         setHome(null);
