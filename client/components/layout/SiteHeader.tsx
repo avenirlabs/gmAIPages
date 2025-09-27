@@ -1,110 +1,125 @@
 import { useEffect, useState } from "react";
-import { NavMenu } from "./NavMenu";
+import { Link, NavLink } from "react-router-dom";
+import { Menu, X } from "lucide-react";
+import clsx from "clsx";
 
-interface LegacyNavLink {
-  label: string;
-  href: string;
-  position: number;
-}
-
-interface NavLink {
-  id: string;
-  label: string;
-  href?: string;
-  children?: NavLink[];
-  isMega?: boolean;
-}
-
-interface NavResponse {
-  links: LegacyNavLink[]; // Legacy format for backward compatibility
-  items: NavLink[];      // New nested format
-}
-
-const FALLBACK_ITEMS: NavLink[] = [
-  { id: "home", label: "Home", href: "/" },
-  { id: "diwali", label: "Diwali Gifts", href: "/diwali" },
-  { id: "anniversary", label: "Anniversary", href: "/anniversary" },
-  { id: "father", label: "Gifts for Father", href: "/gifts-for-father" },
-  { id: "admin", label: "Admin", href: "/admin" },
+/**
+ * Simple nav model.
+ * If you already load nav items from your backend, replace NAV with that data.
+ */
+const NAV: Array<{ label: string; to: string }> = [
+  { label: "Home", to: "/" },
+  { label: "Corporate Gifts", to: "/corporate-gifts" },
+  { label: "Gifts for Him", to: "/gifts-him" },
+  { label: "Diwali Gifts", to: "/diwali-gifts" },
 ];
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const [navItems, setNavItems] = useState<NavLink[]>(FALLBACK_ITEMS);
 
+  // Close mobile menu on route change (optional safety if you use router navigation elsewhere)
   useEffect(() => {
-    const ac = new AbortController();
-    fetch("/api/nav/links", { signal: ac.signal })
-      .then(async (r) => (r.ok ? r.json() : Promise.reject(await r.text())))
-      .then((d: NavResponse) => {
-        // Use new nested format if available, otherwise fallback to legacy
-        const items = d?.items || [];
-        if (items.length) {
-          setNavItems(items);
-        } else {
-          // Convert legacy format to new format
-          const legacyLinks = d?.links || [];
-          if (legacyLinks.length) {
-            const convertedItems: NavLink[] = legacyLinks.map((link, index) => ({
-              id: link.label.toLowerCase().replace(/\s+/g, '-'),
-              label: link.label,
-              href: link.href === "#" ? undefined : link.href,
-            }));
-            setNavItems(convertedItems);
-          }
-        }
-      })
-      .catch(() => {})
-      .finally(() => {});
-    return () => ac.abort();
+    const closeOnHash = () => setOpen(false);
+    window.addEventListener("hashchange", closeOnHash);
+    return () => window.removeEventListener("hashchange", closeOnHash);
   }, []);
 
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (open) {
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.documentElement.style.overflow = "";
+    }
+  }, [open]);
+
   return (
-    
-<header className="sticky top-0 z-50 border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Brand */}
+        <Link to="/" className="flex items-center gap-2">
+          {/* If you have a logo image, drop it here */}
+          {/* <img src="/logo.svg" alt="Giftsmate" className="h-7 w-auto" /> */}
+          <span className="text-lg font-extrabold tracking-tight text-slate-900">Giftsmate</span>
+        </Link>
 
-      <div className="container mx-auto px-4">
-        <div className="flex h-20 items-center gap-4">
-          <a href="/" className="inline-flex items-center">
-            <img
-              src="https://www.giftsmate.net/wp-content/uploads/2025/06/giftsmate-logo.png"
-              alt="GiftsMate"
-              className="h-20 w-auto object-contain p-[5px]"
-            />
-          </a>
-
-          <NavMenu items={navItems} className="ml-2" />
-
-          <button
-            aria-label="Open menu"
-            className="ml-auto inline-flex h-10 w-10 items-center justify-center rounded-md text-[#155ca5] hover:bg-white/60 md:hidden"
-            onClick={() => setOpen((v) => !v)}
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        {/* Desktop nav */}
+        <nav className="hidden items-center gap-6 lg:flex">
+          {NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                clsx(
+                  "text-sm font-medium transition",
+                  isActive
+                    ? "text-[#155ca5]"
+                    : "text-slate-700 hover:text-slate-900"
+                )
+              }
             >
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Desktop right-side actions (optional placeholder) */}
+        <div className="hidden items-center gap-3 lg:flex">
+          {/* e.g., account/cart buttons can go here */}
+          {/* <Link to="/cart" className="rounded-full border px-3 py-1.5 text-sm">Cart</Link> */}
         </div>
+
+        {/* Mobile hamburger */}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls="mobile-nav"
+          className="inline-flex items-center justify-center rounded-full border border-slate-300/70 bg-white/80 p-2 text-slate-700 shadow-sm transition hover:bg-white/90 lg:hidden"
+        >
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <span className="sr-only">Toggle menu</span>
+        </button>
       </div>
 
-      {open ? (
-        <div className="border-t bg-white md:hidden">
-          <div className="container mx-auto px-4 py-2">
-            <NavMenu items={navItems} onNavigate={() => setOpen(false)} />
-          </div>
-        </div>
-      ) : null}
+      {/* Mobile panel */}
+      <div
+        id="mobile-nav"
+        className={clsx(
+          "lg:hidden border-t border-slate-200/60 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 transition-[max-height,opacity] duration-200 ease-out overflow-hidden",
+          open ? "max-h-[70vh] opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        <nav className="container mx-auto px-4 py-3 sm:px-6">
+          <ul className="flex flex-col divide-y divide-slate-200/60">
+            {NAV.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  onClick={() => setOpen(false)}
+                  className={({ isActive }) =>
+                    clsx(
+                      "flex items-center justify-between py-3 text-base",
+                      isActive
+                        ? "font-semibold text-[#155ca5]"
+                        : "text-slate-800"
+                    )
+                  }
+                >
+                  <span>{item.label}</span>
+                  {/* chevron could be added here if you have nested items */}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+
+          {/* Optional: sticky actions at bottom of sheet */}
+          {/* <div className="mt-3 flex gap-3">
+            <Link to="/cart" className="flex-1 rounded-full border px-4 py-2 text-sm text-slate-700">Cart</Link>
+            <Link to="/account" className="flex-1 rounded-full bg-[#155ca5] px-4 py-2 text-sm font-semibold text-white">Account</Link>
+          </div> */}
+        </nav>
+      </div>
     </header>
   );
 }
