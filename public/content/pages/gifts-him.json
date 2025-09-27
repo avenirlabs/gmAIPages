@@ -1,0 +1,25 @@
+{
+  "id": "a61614b7-756a-487c-ac78-91e573c43653",
+  "slug": "gifts-him",
+  "title": "Gifts for Him",
+  "page_description": "Gifts for Him",
+  "long_description": "Gifts for Him",
+  "chips": [
+    "dad",
+    "husband",
+    "brother",
+    "grandpa",
+    "boyfriend",
+    "father in law",
+    "brother in law"
+  ],
+  "content": {
+    "productGrid": {
+      "limit": 20,
+      "source": "category",
+      "enabled": false,
+      "categorySlug": ""
+    }
+  },
+  "last_updated": "2025-09-27T05:19:52.288Z"
+}

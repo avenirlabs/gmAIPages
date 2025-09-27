@@ -1,0 +1,24 @@
+{
+  "id": "a01ea479-9075-416d-a650-f9c45940a00f",
+  "slug": "home",
+  "title": "Discover Gifts Smarter, Not Harder",
+  "page_description": "AI-powered recommendations tailored to personalities, occasions, and relationships—because thoughtful gifting should feel effortless.",
+  "long_description": "this is a long description to appear under the chat window",
+  "chips": [
+    "karvachauth gifts",
+    "hubby",
+    "dad",
+    "sis",
+    "mom",
+    "diwali"
+  ],
+  "content": {
+    "productGrid": {
+      "limit": 25,
+      "source": "featured",
+      "enabled": true,
+      "categorySlug": ""
+    }
+  },
+  "last_updated": "2025-09-27T05:19:52.286Z"
+}

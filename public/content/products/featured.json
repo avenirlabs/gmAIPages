@@ -1,40 +1,68 @@
 {
   "products": [
     {
-      "id": 1,
-      "name": "Wireless Bluetooth Headphones",
-      "link": "https://example.com/product/1",
-      "image": "https://via.placeholder.com/300x300?text=Headphones",
-      "price": 2999,
-      "regular_price": 3999,
-      "sale_price": 2999
+      "id": 31232,
+      "name": "Wine bottle lantern",
+      "link": "https://www.giftsmate.net/product/accessories/wine-bottle-lantern/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2021/10/retail-product-7.jpg",
+      "price": 399,
+      "regular_price": 399
     },
     {
-      "id": 2,
-      "name": "Smart Fitness Watch",
-      "link": "https://example.com/product/2",
-      "image": "https://via.placeholder.com/300x300?text=Watch",
-      "price": 4999,
-      "regular_price": 4999,
-      "sale_price": 0
+      "id": 275,
+      "name": "PT Speaker",
+      "link": "https://www.giftsmate.net/?post_type=product&p=275",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2020/07/shop36_product12.jpg",
+      "price": 29,
+      "regular_price": 29
     },
     {
-      "id": 3,
-      "name": "Premium Coffee Maker",
-      "link": "https://example.com/product/3",
-      "image": "https://via.placeholder.com/300x300?text=Coffee",
-      "price": 8999,
-      "regular_price": 8999,
-      "sale_price": 0
+      "id": 214,
+      "name": "Beats Solo HD Drenched",
+      "link": "https://www.giftsmate.net/product/accessories/beats-solo-hd-drenched/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2020/07/shop36_product5.jpg",
+      "price": 88,
+      "regular_price": 88
     },
     {
-      "id": 4,
-      "name": "Ergonomic Office Chair",
-      "link": "https://example.com/product/4",
-      "image": "https://via.placeholder.com/300x300?text=Chair",
-      "price": 12999,
-      "regular_price": 15999,
-      "sale_price": 12999
+      "id": 213,
+      "name": "Palm Print Jacket",
+      "link": "https://www.giftsmate.net/product/fashion/palm-print-jacket/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2020/07/shop36_cat1.jpg",
+      "price": 289,
+      "regular_price": 289
+    },
+    {
+      "id": 212,
+      "name": "Camera",
+      "link": "https://www.giftsmate.net/product/accessories/camera/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2020/07/shop36_product6.jpg",
+      "price": 199,
+      "regular_price": 199
+    },
+    {
+      "id": 194,
+      "name": "Red Football",
+      "link": "https://www.giftsmate.net/product/fashion/red-football/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2020/07/shop36_product7.jpg",
+      "price": 89,
+      "regular_price": 89
+    },
+    {
+      "id": 193,
+      "name": "Soft Hat",
+      "link": "https://www.giftsmate.net/product/fashion/soft-hat/",
+      "image": "/placeholder.png",
+      "price": 29,
+      "regular_price": 29
+    },
+    {
+      "id": 192,
+      "name": "PT Bag",
+      "link": "https://www.giftsmate.net/product/accessories/pt-bag/",
+      "image": "/placeholder.png",
+      "price": 99,
+      "regular_price": 99
     }
   ]
 }

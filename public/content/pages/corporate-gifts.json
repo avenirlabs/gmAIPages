@@ -1,0 +1,22 @@
+{
+  "id": "53222625-8b1a-4294-a7ca-d1ced04a9edc",
+  "slug": "corporate-gifts",
+  "title": "Corporate Gifts",
+  "page_description": "Corporate Gifts",
+  "long_description": "This is big description for corporate gifts",
+  "chips": [
+    "corporate gifts",
+    "bulk gifts",
+    "team gifts",
+    "employee gifts"
+  ],
+  "content": {
+    "productGrid": {
+      "limit": 20,
+      "source": "category",
+      "enabled": true,
+      "categorySlug": "gifts-for-mother"
+    }
+  },
+  "last_updated": "2025-09-27T05:19:52.283Z"
+}

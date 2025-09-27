@@ -1,22 +1,195 @@
 {
   "products": [
     {
-      "id": 5,
-      "name": "Bestselling Smartphone Case",
-      "link": "https://example.com/product/5",
-      "image": "https://via.placeholder.com/300x300?text=Phone+Case",
-      "price": 599,
-      "regular_price": 899,
-      "sale_price": 599
+      "id": 12204,
+      "name": "Super Daddy Apron",
+      "link": "https://www.giftsmate.net/product/tyyc/gift-aprons/super-daddy-apron/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2022/05/Super-Daddy-Apron.jpg",
+      "price": 499,
+      "regular_price": 749,
+      "sale_price": 499
     },
     {
-      "id": 6,
-      "name": "Popular Gaming Mouse",
-      "link": "https://example.com/product/6",
-      "image": "https://via.placeholder.com/300x300?text=Mouse",
-      "price": 1999,
+      "id": 7812,
+      "name": "Naughty Sex Positions Engraved Shot Glasses Set of 6",
+      "link": "https://www.giftsmate.net/product/gifts-gadgets/engraved-gifts/naughty-sex-positions-engraved-shot-glasses-set-of-6/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2022/05/Naughty-Sex-Positions-Shot-Glasses-scaled.jpg",
+      "price": 1449,
+      "regular_price": 1449
+    },
+    {
+      "id": 70658,
+      "name": "Dream Come True Unicorn Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/dream-come-true-unicorn-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/01/71GDrbYEyNL._SL1500_-scaled.jpg",
+      "price": 1499,
       "regular_price": 1999,
-      "sale_price": 0
+      "sale_price": 1499
+    },
+    {
+      "id": 26293,
+      "name": "One in A Million Brother Printed Notebook",
+      "link": "https://www.giftsmate.net/product/notebooks-writing-pads-diaries/one-in-a-million-brother-printed-notebook/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2022/05/81sTqcdOmTL._AC_SL1500_-scaled.jpg",
+      "price": 499,
+      "regular_price": 499
+    },
+    {
+      "id": 9685,
+      "name": "Worlds Greatest Dad Trophy Beer Pilsner Glass",
+      "link": "https://www.giftsmate.net/product/gifts-gadgets/engraved-gifts/worlds-greatest-dad-trophy-beer-pilsner-glass/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2022/05/worlds-greatest-dad-Trophy-Dad-Pilsner-Glass-1-scaled.jpg",
+      "price": 749,
+      "regular_price": 749
+    },
+    {
+      "id": 7220,
+      "name": "Bunty Babli Couple T-shirt",
+      "link": "https://www.giftsmate.net/product/fashion/gift-tshirts/bunty-babli-couple-t-shirt/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2022/05/14-2.jpg",
+      "price": 999,
+      "regular_price": 999
+    },
+    {
+      "id": 84791,
+      "name": "Wake up Makeup Pouch for Women Multifunctional Travel Kit Storage Toiletry Bag",
+      "link": "https://www.giftsmate.net/?post_type=product&p=84791",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2024/10/511CoZ4txRL.jpg",
+      "price": 498,
+      "regular_price": 499,
+      "sale_price": 498
+    },
+    {
+      "id": 84703,
+      "name": "Proud New Daddy Baby Loading: The Perfect Couple Maternity Tshirt for Plus Size Parents-to-Be",
+      "link": "https://www.giftsmate.net/?post_type=product&p=84703",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2024/09/71qbj3Wu1L._SL1500_-scaled.jpg",
+      "price": 999,
+      "regular_price": 1499,
+      "sale_price": 999
+    },
+    {
+      "id": 84694,
+      "name": "Dad to be Loading and Baby Loading Couple Maternity T-shirt set",
+      "link": "https://www.giftsmate.net/product/fashion/gift-tshirts/couple-maternity-t-shirts/dad-to-be-loading-and-baby-loading-couple-maternity-t-shirt-set/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2024/09/717bhTBrL7L._SL1500_-scaled.jpg",
+      "price": 999,
+      "regular_price": 1199,
+      "sale_price": 999
+    },
+    {
+      "id": 84657,
+      "name": "Dad to be and Love Pregnancy Announcement Couple T-shirts",
+      "link": "https://www.giftsmate.net/product/fashion/gift-tshirts/couple-maternity-t-shirts/dad-to-be-and-love-pregnancy-announcement-couple-t-shirts/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2024/09/71lWIIwJn8L._SL1500_-scaled.jpg",
+      "price": 999,
+      "regular_price": 1499,
+      "sale_price": 999
+    },
+    {
+      "id": 82292,
+      "name": "Product Advertisement Payment",
+      "link": "https://www.giftsmate.net/product/accessories/product-advertisement-payment/",
+      "image": "/placeholder.png",
+      "price": 0,
+      "regular_price": 0
+    },
+    {
+      "id": 82291,
+      "name": "Reverse Withdrawal Payment",
+      "link": "https://www.giftsmate.net/product/accessories/reverse-withdrawal-payment/",
+      "image": "/placeholder.png",
+      "price": 0,
+      "regular_price": 0
+    },
+    {
+      "id": 79478,
+      "name": "Curvy Bullet Vacuum flask",
+      "link": "https://www.giftsmate.net/?post_type=product&p=79478",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/09/h170-curvy-bullet-vacuum-flask-500-ml-approx-best-corporate.jpg",
+      "price": 999,
+      "regular_price": 1199,
+      "sale_price": 999
+    },
+    {
+      "id": 75526,
+      "name": "Big Geek Little Geek Dad and Son T-Shirts",
+      "link": "https://www.giftsmate.net/product/fashion/gift-tshirts/family-tshirts/big-geek-little-geek-dad-and-son-t-shirts/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/07/8.jpg",
+      "price": 999
+    },
+    {
+      "id": 70827,
+      "name": "Dream Unicorn Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/dream-unicorn-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/02/71OPIu4sA9L._SL1500_-scaled.jpg",
+      "price": 1499
+    },
+    {
+      "id": 70818,
+      "name": "Star Moon Unicorn Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/star-moon-unicorn-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/02/71rxhGML53L._SL1500_-scaled.jpg",
+      "price": 1499
+    },
+    {
+      "id": 70811,
+      "name": "Cute Magical Unicorns Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/cute-magical-unicorns-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/02/81GUCMCPZL._SL1500_-scaled.jpg"
+    },
+    {
+      "id": 70802,
+      "name": "Swag Baby Unicorns Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/swag-baby-unicorns-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/02/71z44fbEBOL._SL1500_-scaled.jpg",
+      "price": 1499
+    },
+    {
+      "id": 70793,
+      "name": "Swag Unicorn Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/swag-unicorn-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/02/71oYDPALydL._SL1500_-scaled.jpg",
+      "price": 1499
+    },
+    {
+      "id": 70783,
+      "name": "Donut Unicorn Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/donut-unicorn-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/02/71-WWAFt-L._SL1500_-scaled.jpg",
+      "price": 1499
+    },
+    {
+      "id": 70775,
+      "name": "Kids Cute Unicorns Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/kids-cute-unicorns-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/02/71jl51JfJZL._SL1500_-scaled.jpg",
+      "price": 1499
+    },
+    {
+      "id": 70715,
+      "name": "Kids Balloons Flying Unicorns Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/kids-balloons-flying-unicorns-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/02/71W-wuwjnL._SL1500_-scaled.jpg",
+      "price": 1499,
+      "regular_price": 1999,
+      "sale_price": 1499
+    },
+    {
+      "id": 70709,
+      "name": "Kids Magical Unicorns Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/kids-magical-unicorns-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/02/71hXlXJJKpL._SL1500_.jpg",
+      "price": 1499
+    },
+    {
+      "id": 70704,
+      "name": "Unicorn Magical Printed Bedsheet",
+      "link": "https://www.giftsmate.net/product/home-decor/personalized-bed-sheets-custom/unicorn-magical-printed-bedsheet/",
+      "image": "https://www.giftsmate.net/wp-content/uploads/2023/02/715iMMmrX7L._SX679_.jpg",
+      "price": 1499,
+      "regular_price": 1999,
+      "sale_price": 1499
     }
   ]
 }
