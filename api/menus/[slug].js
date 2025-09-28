@@ -29,20 +29,38 @@ export default async function handler(req, res) {
     );
 
     if (req.method === "GET") {
+      // First, let's see what slugs are available for debugging
+      const { data: allMenus } = await sb
+        .from("menus")
+        .select("slug");
+
+      // Now try to get the specific menu
       const { data, error } = await sb
         .from("menus")
         .select("data")
-        .eq("slug", slug)
-        .single();
+        .eq("slug", slug);
 
-      if (error || !data) {
+      if (error) {
         console.error("GET menus error:", error);
-        return res.status(404).json({ error: error?.message || "Menu not found" });
+        return res.status(500).json({
+          error: error.message,
+          requestedSlug: slug,
+          availableSlugs: allMenus?.map(m => m.slug) || []
+        });
       }
 
-      const items = Array.isArray(data?.data?.items)
-        ? data.data.items
-        : (Array.isArray(data?.data) ? data.data : []);
+      if (!data || data.length === 0) {
+        return res.status(404).json({
+          error: "Menu not found",
+          requestedSlug: slug,
+          availableSlugs: allMenus?.map(m => m.slug) || []
+        });
+      }
+
+      const menuData = data[0]; // Get first result instead of using .single()
+      const items = Array.isArray(menuData?.data?.items)
+        ? menuData.data.items
+        : (Array.isArray(menuData?.data) ? menuData.data : []);
 
       return res.json({ items });
     }
