@@ -522,115 +522,50 @@ const handlers = {
     }
   },
 
-  // Menu endpoints
-  'GET /menus/main': async (req, res) => {
-    const cached = getCache('menu-main');
-    if (cached) return res.json({ items: cached });
-
-    const sb = getSupabaseAdmin();
-    if (!sb) {
-      // Fallback to hardcoded menu when no Supabase
-      const fallback = [
-        { type: "link", label: "Home", to: "/" },
-        {
-          type: "mega",
-          label: "Shop",
-          columns: [
-            {
-              heading: "By Relationship",
-              links: [
-                { label: "Gifts for Him", to: "/gifts-him" },
-                { label: "Gifts for Her", to: "/gifts-her" },
-                { label: "For Parents", to: "/parents" },
-                { label: "For Kids", to: "/kids" }
-              ]
-            },
-            {
-              heading: "By Occasion",
-              links: [
-                { label: "Diwali Gifts", to: "/diwali-gifts", badge: "Trending" },
-                { label: "Birthday", to: "/birthday" },
-                { label: "Anniversary", to: "/anniversary" },
-                { label: "Housewarming", to: "/housewarming" }
-              ]
-            },
-            {
-              heading: "By Category",
-              links: [
-                { label: "Personalized", to: "/personalized" },
-                { label: "Home & Decor", to: "/home-decor" },
-                { label: "Office & Desk", to: "/office-desk" },
-                { label: "Accessories", to: "/accessories" }
-              ]
-            }
-          ],
-          promo: {
-            title: "Corporate Gifting",
-            text: "Curated catalog, bulk pricing, brand-ready.",
-            to: "/corporate-gifts"
-          }
-        },
-        { type: "link", label: "Corporate Gifts", to: "/corporate-gifts" },
-        { type: "link", label: "Diwali Gifts", to: "/diwali-gifts" }
-      ];
-      return res.json({ items: fallback });
-    }
-
-    try {
-      const { data, error } = await sb
-        .from("menus")
-        .select("items")
-        .eq("id", "main")
-        .single();
-
-      if (error || !data) {
-        console.error('Menu fetch error:', error);
-        return res.json({ items: [] });
-      }
-
-      const items = data.items?.items || data.items || [];
-      setCache('menu-main', items);
-      return res.json({ items });
-    } catch (e) {
-      console.error('Menu API error:', e);
-      return res.json({ items: [] });
-    }
-  },
-
-  'PUT /menus/main': async (req, res) => {
+  // --- GET menu by slug ---
+  'GET /menus/:slug': async (req, res, params) => {
+    const { slug } = params;
     const sb = getSupabaseAdmin();
     if (!sb) {
       return res.status(500).json({ error: "No Supabase config" });
     }
 
-    try {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const { data, error } = await sb
+      .from("menus")
+      .select("data")
+      .eq("slug", slug)
+      .single();
 
-      if (!body || !Array.isArray(body.items)) {
-        return res.status(400).json({ error: "Invalid payload: expected { items: NavItem[] }" });
-      }
-
-      const { error } = await sb
-        .from("menus")
-        .upsert({
-          id: "main",
-          items: { items: body.items },
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error('Menu update error:', error);
-        return res.status(500).json({ error: error.message });
-      }
-
-      // Clear cache so next GET fetches fresh data
-      cache.delete('menu-main');
-
-      return res.json({ ok: true });
-    } catch (e) {
-      console.error('Menu PUT error:', e);
-      return res.status(500).json({ error: e.message || "Error updating menu" });
+    if (error || !data) {
+      return res.status(500).json({ error: error?.message || "Menu not found" });
     }
+
+    const items = Array.isArray(data?.data?.items)
+      ? data.data.items
+      : (Array.isArray(data?.data) ? data.data : []);
+
+    res.json({ items });
+  },
+
+  // --- PUT menu by slug ---
+  'PUT /menus/:slug': async (req, res, params) => {
+    const { slug } = params;
+    const body = req.body;
+    const sb = getSupabaseAdmin();
+    if (!sb) {
+      return res.status(500).json({ error: "No Supabase config" });
+    }
+
+    const { error } = await sb
+      .from("menus")
+      .upsert({
+        slug,
+        data: { items: body.items },
+        updated_at: new Date().toISOString()
+      }, { onConflict: "slug" });
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ ok: true });
   },
 
   // Analytics endpoints (admin-protected)
@@ -818,6 +753,12 @@ export default async function handler(req, res) {
       const slug = normalizedPath.substring(7); // Remove '/pages/'
       params.slug = slug;
       route = `${req.method} /pages/:slug`;
+    }
+
+    if (normalizedPath.startsWith('/menus/') && normalizedPath !== '/menus/main') {
+      const slug = normalizedPath.substring(7); // Remove '/menus/'
+      params.slug = slug;
+      route = `${req.method} /menus/:slug`;
     }
 
     if (handlers[route]) {
