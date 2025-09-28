@@ -1,11 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 
-const sb = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY,
-  { auth: { persistSession: false } }
-);
-
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -19,6 +13,21 @@ export default async function handler(req, res) {
   const { slug } = req.query;
 
   try {
+    // Initialize Supabase client inside the handler
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return res.status(500).json({
+        error: "Missing Supabase configuration",
+        hasUrl: !!process.env.SUPABASE_URL,
+        hasKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+      });
+    }
+
+    const sb = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY,
+      { auth: { persistSession: false } }
+    );
+
     if (req.method === "GET") {
       const { data, error } = await sb
         .from("menus")
