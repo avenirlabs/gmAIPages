@@ -1,1 +1,10 @@
-{}
+{
+  "functions": {
+    "api/health.js": {
+      "runtime": "@vercel/node"
+    },
+    "api/menus/[slug].js": {
+      "runtime": "@vercel/node"
+    }
+  }
+}
