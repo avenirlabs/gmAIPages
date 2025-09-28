@@ -12,13 +12,17 @@ export default async function handler(req, res) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
   if (!url || !key) {
-    return res.status(500).json({ error: "Supabase env vars missing", hasUrl: !!url, hasKey: !!key });
+    return res.status(500).json({
+      error: "Supabase env vars missing",
+      hasUrl: !!url, hasKey: !!key
+    });
   }
+
   const sb = createClient(url, key, { auth: { persistSession: false } });
 
   try {
     if (req.method === "GET") {
-      // ✅ tolerant: do NOT use .single(); use maybeSingle() and handle null
+      // ✅ tolerant: DO NOT use .single()
       const { data, error } = await sb
         .from("menus")
         .select("data")
@@ -26,11 +30,10 @@ export default async function handler(req, res) {
         .maybeSingle();
 
       if (error) {
-        console.error("GET menus error:", error);
+        console.error("GET /api/menus/%s error:", slug, error);
         return res.status(500).json({ error: error.message, requestedSlug: slug });
       }
       if (!data) {
-        // Helpful: list available slugs for debugging
         const { data: all } = await sb.from("menus").select("slug").order("slug");
         return res.status(404).json({
           error: `Menu '${slug}' not found`,
@@ -49,14 +52,16 @@ export default async function handler(req, res) {
       if (!Array.isArray(body.items)) {
         return res.status(400).json({ error: "Body must be { items: [...] }" });
       }
+
       const { error: upsertErr } = await sb
         .from("menus")
         .upsert(
           { slug, data: { items: body.items }, updated_at: new Date().toISOString() },
           { onConflict: "slug" }
         );
+
       if (upsertErr) {
-        console.error("PUT menus upsert error:", upsertErr);
+        console.error("PUT /api/menus/%s upsert error:", slug, upsertErr);
         return res.status(500).json({ error: upsertErr.message, requestedSlug: slug });
       }
       return res.json({ ok: true });
