@@ -8,13 +8,15 @@ export default function handler(req, res) {
     return res.status(204).end();
   }
 
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
+  const { slug } = req.query;
+
+  if (req.method === "GET") {
+    return res.status(200).json({
+      items: [
+        { id: 1, name: "Sample Menu Item", slug: slug || "default" }
+      ]
+    });
   }
 
-  return res.status(200).json({
-    ok: true,
-    timestamp: new Date().toISOString(),
-    message: "Health check passed"
-  });
+  return res.status(405).json({ error: "Method not allowed" });
 }
