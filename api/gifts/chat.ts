@@ -11,13 +11,26 @@ interface ChatResponse {
   ok: boolean;
   source: 'stub' | 'openai';
   query: string;
-  suggestions: string[];
-  results: Array<{
+  reply: string;
+  products: Array<{
+    id: string;
     title: string;
     url: string;
     score: number;
     reason: string;
+    price?: number;
+    currency?: string;
+    image?: string;
+    description?: string;
   }>;
+  refineChips: string[];
+  pageInfo: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    nextCursor?: string;
+  };
   requestId?: string;
   error?: string;
 }
@@ -50,48 +63,64 @@ const PRODUCT_SUGGESTIONS = {
 function generateStubResponse(query: string): Omit<ChatResponse, 'ok' | 'requestId'> {
   const normalizedQuery = query.toLowerCase();
 
-  // Generate suggestions based on query keywords
-  const suggestions: string[] = [];
+  // Generate refine chips based on query keywords
+  const refineChips: string[] = [];
   for (const [keyword, categoryList] of Object.entries(GIFT_CATEGORIES)) {
     if (normalizedQuery.includes(keyword)) {
-      suggestions.push(...categoryList.slice(0, 2));
+      refineChips.push(...categoryList.slice(0, 2));
     }
   }
 
-  // Add some default suggestions if none matched
-  if (suggestions.length === 0) {
-    suggestions.push('Popular Gifts', 'Trending Items', 'Gift Cards');
+  // Add some default refine chips if none matched
+  if (refineChips.length === 0) {
+    refineChips.push('Popular Gifts', 'Trending Items', 'Gift Cards');
   }
 
-  // Generate results based on query keywords
-  const results = [];
+  // Generate products based on query keywords
+  const products = [];
   let score = 0.9;
+  let idCounter = 1;
 
   for (const [keyword, product] of Object.entries(PRODUCT_SUGGESTIONS)) {
-    if (normalizedQuery.includes(keyword) && results.length < 5) {
-      results.push({
+    if (normalizedQuery.includes(keyword) && products.length < 5) {
+      products.push({
+        id: `stub_${idCounter++}`,
         ...product,
         score: score,
-        reason: `Matches "${keyword}" in your search: ${product.reason}`
+        reason: `Matches "${keyword}" in your search: ${product.reason}`,
+        price: Math.floor(Math.random() * 100) + 20,
+        currency: 'USD',
+        image: '/placeholder-gift.jpg',
+        description: `${product.title} - ${product.reason}`
       });
       score -= 0.1;
     }
   }
 
-  // Add default results if none matched
-  if (results.length === 0) {
-    results.push(
+  // Add default products if none matched
+  if (products.length === 0) {
+    products.push(
       {
+        id: 'stub_default_1',
         title: 'Gift Voucher',
         url: '/products/gift-voucher',
         score: 0.8,
-        reason: 'Versatile gift option for any occasion'
+        reason: 'Versatile gift option for any occasion',
+        price: 50,
+        currency: 'USD',
+        image: '/placeholder-voucher.jpg',
+        description: 'Perfect gift voucher for any special occasion'
       },
       {
+        id: 'stub_default_2',
         title: 'Personalized Photo Frame',
         url: '/products/photo-frame',
         score: 0.7,
-        reason: 'Memorable keepsake with personal touch'
+        reason: 'Memorable keepsake with personal touch',
+        price: 35,
+        currency: 'USD',
+        image: '/placeholder-frame.jpg',
+        description: 'Beautiful personalized photo frame for cherished memories'
       }
     );
   }
@@ -99,8 +128,15 @@ function generateStubResponse(query: string): Omit<ChatResponse, 'ok' | 'request
   return {
     source: 'stub',
     query,
-    suggestions: [...new Set(suggestions)].slice(0, 5),
-    results
+    reply: `Found ${products.length} gift suggestions for "${query}". These are handpicked recommendations that match your search.`,
+    products,
+    refineChips: [...new Set(refineChips)].slice(0, 5),
+    pageInfo: {
+      total: products.length,
+      page: 1,
+      pageSize: products.length,
+      totalPages: 1
+    }
   };
 }
 
@@ -149,16 +185,30 @@ async function getOpenAIResponse(query: string): Promise<Omit<ChatResponse, 'ok'
       throw new Error('Invalid response structure from OpenAI');
     }
 
+    const products = parsed.results.slice(0, 4).map((item: any, index: number) => ({
+      id: `openai_${index + 1}`,
+      title: String(item.title || 'Gift Item'),
+      url: String(item.url || '/products/item'),
+      score: Math.max(0, Math.min(1, Number(item.score) || 0.5)),
+      reason: String(item.reason || 'Recommended gift option'),
+      price: Math.floor(Math.random() * 100) + 20,
+      currency: 'USD',
+      image: '/placeholder-gift.jpg',
+      description: String(item.title || 'Gift Item')
+    }));
+
     return {
       source: 'openai',
       query,
-      suggestions: parsed.suggestions.slice(0, 5),
-      results: parsed.results.slice(0, 4).map((item: any) => ({
-        title: String(item.title || 'Gift Item'),
-        url: String(item.url || '/products/item'),
-        score: Math.max(0, Math.min(1, Number(item.score) || 0.5)),
-        reason: String(item.reason || 'Recommended gift option')
-      }))
+      reply: `Found ${products.length} AI-powered gift suggestions for "${query}". These recommendations are tailored to your search.`,
+      products,
+      refineChips: parsed.suggestions.slice(0, 5),
+      pageInfo: {
+        total: products.length,
+        page: 1,
+        pageSize: products.length,
+        totalPages: 1
+      }
     };
   } catch (error) {
     console.error('OpenAI API error:', error);
