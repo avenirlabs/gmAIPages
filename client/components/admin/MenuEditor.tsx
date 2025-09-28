@@ -57,17 +57,30 @@ export default function MenuEditor() {
   const [msg, setMsg] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
 
-  // Load current menu (API fallback already in place server-side)
+  // Load current menu (robust fetch that works across prod/staging)
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("/api/menus/main");
-        const d = (await r.json()) as MenuPayload;
-        // Normalize: some APIs may store {items:{items:[]}}
-        const normalized = (Array.isArray((d as any)?.items) ? d : { items: (d as any)?.items?.items ?? (d as any)?.items }) as MenuPayload;
-        setMenu(normalized?.items ? normalized : emptyMenu);
-      } catch {
-        setMenu(emptyMenu);
+        const ORIGIN =
+          (typeof window !== "undefined" && window.location.origin) ||
+          (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+        const base = ORIGIN || "";
+        const slug = "main";
+        const url = `${base}/api/menus/${slug}?ts=${Date.now()}`;
+
+        const r = await fetch(url, { cache: "no-store", credentials: "include" });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const d = await r.json();
+
+        const items =
+          Array.isArray(d?.items) ? d.items :
+          Array.isArray(d?.data?.items) ? d.data.items :
+          Array.isArray(d) ? d : [];
+
+        setMenu({ items });
+      } catch (e) {
+        console.error("Menu load failed:", e);
+        setMenu({ items: [] });
       } finally {
         setLoading(false);
       }
