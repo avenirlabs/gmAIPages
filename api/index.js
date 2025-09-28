@@ -1,8 +1,11 @@
 ////////////////////////////////////////////////////////
 // TOP: imports + app + JSON body parsing
 ////////////////////////////////////////////////////////
-const express = require("express");
-const serverless = require("serverless-http");
+import express from "express";
+import serverless from "serverless-http";
+import { createClient } from "@supabase/supabase-js";
+import { randomUUID } from "crypto";
+
 const app = express();
 app.use(express.json({ limit: "2mb" }));
 
@@ -16,7 +19,6 @@ app.use((req, res, next) => {
 });
 
 // Supabase client (server-side)
-const { createClient } = require("@supabase/supabase-js");
 const sb = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY,
@@ -325,8 +327,6 @@ app.get(["/api/gifts/chat", "/gifts/chat"], (req, res) => {
 });
 
 app.post(["/api/gifts/chat", "/gifts/chat"], wrap(async (req, res) => {
-  const { randomUUID } = require("crypto");
-
   // Handle different body parsing scenarios
   let bodyData = req.body;
 
@@ -553,5 +553,4 @@ app.use((err, req, res, _next) => {
   res.status(500).json({ error: err?.message || "Internal error" });
 });
 
-module.exports = app;
-module.exports.handler = serverless(app);
+export default serverless(app);
