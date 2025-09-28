@@ -1,14 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
-/**
- * GET  /api/menus/:slug -> { items: [...] } or 404
- * PUT  /api/menus/:slug -> upsert { slug, data: { items } }
- * Notes:
- * - RLS currently disabled; still prefer SERVICE ROLE on server if available.
- * - Returns a stable shape: { items: [...] } for the Admin UI.
- */
 export default async function handler(req, res) {
-  // Basic CORS (optional)
+  // CORS (optional)
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,PUT,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -19,35 +12,35 @@ export default async function handler(req, res) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
   if (!url || !key) {
-    return res.status(500).json({
-      error: "Supabase env vars missing",
-      hasUrl: !!url,
-      hasKey: !!key
-    });
+    return res.status(500).json({ error: "Supabase env vars missing", hasUrl: !!url, hasKey: !!key });
   }
-
   const sb = createClient(url, key, { auth: { persistSession: false } });
 
   try {
     if (req.method === "GET") {
-      // Tolerant: don't use .single(); handle 0 rows explicitly
+      // ✅ tolerant: do NOT use .single(); use maybeSingle() and handle null
       const { data, error } = await sb
         .from("menus")
         .select("data")
-        .eq("slug", slug);
+        .eq("slug", slug)
+        .maybeSingle();
 
       if (error) {
-        console.error("GET /api/menus/%s error:", slug, error);
-        return res.status(500).json({ error: error.message, slug });
+        console.error("GET menus error:", error);
+        return res.status(500).json({ error: error.message, requestedSlug: slug });
       }
-      if (!data || data.length === 0) {
-        return res.status(404).json({ error: `Menu '${slug}' not found` });
+      if (!data) {
+        // Helpful: list available slugs for debugging
+        const { data: all } = await sb.from("menus").select("slug").order("slug");
+        return res.status(404).json({
+          error: `Menu '${slug}' not found`,
+          availableSlugs: all?.map(r => r.slug) ?? []
+        });
       }
 
-      const row = data[0];
-      const items = Array.isArray(row?.data?.items)
-        ? row.data.items
-        : (Array.isArray(row?.data) ? row.data : []);
+      const items = Array.isArray(data?.data?.items)
+        ? data.data.items
+        : (Array.isArray(data?.data) ? data.data : []);
       return res.json({ items });
     }
 
@@ -56,17 +49,15 @@ export default async function handler(req, res) {
       if (!Array.isArray(body.items)) {
         return res.status(400).json({ error: "Body must be { items: [...] }" });
       }
-
       const { error: upsertErr } = await sb
         .from("menus")
         .upsert(
           { slug, data: { items: body.items }, updated_at: new Date().toISOString() },
           { onConflict: "slug" }
         );
-
       if (upsertErr) {
-        console.error("PUT /api/menus/%s upsert error:", slug, upsertErr);
-        return res.status(500).json({ error: upsertErr.message, slug });
+        console.error("PUT menus upsert error:", upsertErr);
+        return res.status(500).json({ error: upsertErr.message, requestedSlug: slug });
       }
       return res.json({ ok: true });
     }
