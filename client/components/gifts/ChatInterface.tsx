@@ -93,7 +93,7 @@ export function ChatInterface({
     mutationFn: async (payload) => {
       const controller = new AbortController();
       const t = setTimeout(() => controller.abort(), 20000);
-      const tryUrls = ["/api/gifts/chat", "/.netlify/functions/api/gifts/chat", "/gifts/chat"];
+      const tryUrls = ["/api/gifts/chat"];
       try {
         let lastErr: any = null;
         for (const url of tryUrls) {

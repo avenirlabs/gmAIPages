@@ -38,11 +38,7 @@ export function usePagedChatResults(options: UsePagedChatResultsOptions = {}): U
       const timeout = setTimeout(() => controller.abort(), 20000);
 
       try {
-        const tryUrls = [
-          "/api/gifts/chat",
-          "/.netlify/functions/api/gifts/chat",
-          "/gifts/chat",
-        ];
+        const tryUrls = ["/api/gifts/chat"];
 
         let lastErr: any = null;
         for (const url of tryUrls) {
