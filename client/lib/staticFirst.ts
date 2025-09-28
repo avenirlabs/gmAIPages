@@ -1,4 +1,15 @@
-export async function fetchStaticFirst<T>(
+export async function fetchStaticFirst(staticUrl: string, apiUrl: string) {
+  try {
+    const r = await fetch(staticUrl, { cache: "force-cache" });
+    if (r.ok) return await r.json();
+  } catch {}
+  const r2 = await fetch(apiUrl, { cache: "no-store" });
+  if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+  return await r2.json();
+}
+
+// Legacy typed version for backwards compatibility
+export async function fetchStaticFirstTyped<T>(
   staticUrl: string | null,
   apiUrl: string,
   signal?: AbortSignal

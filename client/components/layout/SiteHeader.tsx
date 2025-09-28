@@ -160,12 +160,12 @@ export function SiteHeader() {
     const ac = new AbortController();
     (async () => {
       try {
-        // Static-first: try CDN JSON, fallback (optional) to /api/menus/main
-        const data = await fetchStaticFirst<{ items: NavItem[] }>(
-          "/content/menus/main.json",
-          "/api/menus/main",
-          ac.signal
-        );
+        const MENU_SLUG = "main";
+        const staticUrl = `/content/menus/${MENU_SLUG}.json`;
+        const apiUrl = `/api/menus/${MENU_SLUG}`;
+
+        const data = await fetchStaticFirst(staticUrl, apiUrl);
+        // data is { items: [...] } — pass data.items into your Nav component
         if (data?.items?.length) setNav(data.items);
       } catch {
         // ignore, fallback already in state

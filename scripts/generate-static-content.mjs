@@ -108,55 +108,32 @@ async function exportCategory(slug, limit = 24) {
 
 /* ---------------------- Menus ----------------------- */
 async function exportMenus() {
-  // Generate main navigation menu
-  // (In future, this could pull from Supabase or other CMS)
-  const mainMenu = {
-    items: [
-      { type: "link", label: "Home", to: "/" },
-      {
-        type: "mega",
-        label: "Shop",
-        columns: [
-          {
-            heading: "By Relationship",
-            links: [
-              { label: "Gifts for Him", to: "/gifts-him" },
-              { label: "Gifts for Her", to: "/gifts-her" },
-              { label: "For Parents", to: "/parents" },
-              { label: "For Kids", to: "/kids" }
-            ]
-          },
-          {
-            heading: "By Occasion",
-            links: [
-              { label: "Diwali Gifts", to: "/diwali-gifts", badge: "Trending" },
-              { label: "Birthday", to: "/birthday" },
-              { label: "Anniversary", to: "/anniversary" },
-              { label: "Housewarming", to: "/housewarming" }
-            ]
-          },
-          {
-            heading: "By Category",
-            links: [
-              { label: "Personalized", to: "/personalized" },
-              { label: "Home & Decor", to: "/home-decor" },
-              { label: "Office & Desk", to: "/office-desk" },
-              { label: "Accessories", to: "/accessories" }
-            ]
-          }
-        ],
-        promo: {
-          title: "Corporate Gifting",
-          text: "Curated catalog, bulk pricing, brand-ready.",
-          to: "/corporate-gifts"
-        }
-      },
-      { type: "link", label: "Corporate Gifts", to: "/corporate-gifts" },
-      { type: "link", label: "Diwali Gifts", to: "/diwali-gifts" }
-    ]
-  };
+  // ===== MENUS: export to /public/content/menus/<slug>.json =====
 
-  await writeJSON(path.join(OUT, "menus", "main.json"), mainMenu);
+  // Fetch menus from Supabase REST
+  const menusResp = await fetch(`${process.env.SUPABASE_URL}/rest/v1/menus?select=slug,data`, {
+    headers: {
+      apikey: process.env.SUPABASE_SERVICE_ROLE,
+      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE}`
+    }
+  });
+  if (!menusResp.ok) {
+    throw new Error(`Failed to fetch menus: HTTP ${menusResp.status}`);
+  }
+  const menus = await menusResp.json(); // [{ slug, data }]
+
+  for (const m of menus) {
+    const payload = Array.isArray(m?.data?.items) ? { items: m.data.items } :
+                    Array.isArray(m?.data) ? { items: m.data } :
+                    { items: [] };
+    const outPath = path.join(OUT, "menus", `${m.slug}.json`);
+    await writeJSON(outPath, payload);
+
+    // Optionally write a canonical main.json if your slug is "main"
+    if (m.slug === "main") {
+      await writeJSON(path.join(OUT, "menus", "main.json"), payload);
+    }
+  }
 }
 
 /* --------------------- Entry point ------------------------ */
