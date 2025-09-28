@@ -1,6 +1,10 @@
 {
   "name": "fusion-starter",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "pkg": {
     "assets": [
       "dist/spa/*"
