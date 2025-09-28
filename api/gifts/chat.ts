@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
+import { searchAlgolia } from '../_services/algolia.ts';
 
 interface ChatRequest {
   query: string;
@@ -9,10 +10,11 @@ interface ChatRequest {
 
 interface ChatResponse {
   ok: boolean;
-  source: 'stub' | 'openai';
+  source: 'algolia' | 'openai' | 'stub';
   query: string;
   reply: string;
-  products: Array<{
+  suggestions: string[];
+  results: Array<{
     id: string;
     title: string;
     url: string;
@@ -23,14 +25,6 @@ interface ChatResponse {
     image?: string;
     description?: string;
   }>;
-  refineChips: string[];
-  pageInfo: {
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-    nextCursor?: string;
-  };
   requestId?: string;
   error?: string;
 }
@@ -129,14 +123,8 @@ function generateStubResponse(query: string): Omit<ChatResponse, 'ok' | 'request
     source: 'stub',
     query,
     reply: `Found ${products.length} gift suggestions for "${query}". These are handpicked recommendations that match your search.`,
-    products,
-    refineChips: [...new Set(refineChips)].slice(0, 5),
-    pageInfo: {
-      total: products.length,
-      page: 1,
-      pageSize: products.length,
-      totalPages: 1
-    }
+    results: products,
+    suggestions: [...new Set(refineChips)].slice(0, 5)
   };
 }
 
@@ -185,7 +173,7 @@ async function getOpenAIResponse(query: string): Promise<Omit<ChatResponse, 'ok'
       throw new Error('Invalid response structure from OpenAI');
     }
 
-    const products = parsed.results.slice(0, 4).map((item: any, index: number) => ({
+    const results = parsed.results.slice(0, 4).map((item: any, index: number) => ({
       id: `openai_${index + 1}`,
       title: String(item.title || 'Gift Item'),
       url: String(item.url || '/products/item'),
@@ -200,15 +188,9 @@ async function getOpenAIResponse(query: string): Promise<Omit<ChatResponse, 'ok'
     return {
       source: 'openai',
       query,
-      reply: `Found ${products.length} AI-powered gift suggestions for "${query}". These recommendations are tailored to your search.`,
-      products,
-      refineChips: parsed.suggestions.slice(0, 5),
-      pageInfo: {
-        total: products.length,
-        page: 1,
-        pageSize: products.length,
-        totalPages: 1
-      }
+      reply: `Found ${results.length} AI-powered gift suggestions for "${query}". These recommendations are tailored to your search.`,
+      results,
+      suggestions: parsed.suggestions.slice(0, 5)
     };
   } catch (error) {
     console.error('OpenAI API error:', error);
@@ -266,15 +248,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const query = body.query.trim();
+    const topK = body.topK || 10;
 
-    // Generate response using OpenAI if available, otherwise use stub
+    // Build stub results first (existing behavior)
+    const stubResults = generateStubResponse(query);
+
+    // Try Algolia search first
+    const algoliaSearch = await searchAlgolia(query, topK);
+
     let responseData: Omit<ChatResponse, 'ok' | 'requestId'>;
+    let source: 'algolia' | 'openai' | 'stub' = 'stub';
 
-    if (process.env.OPENAI_API_KEY) {
-      responseData = await getOpenAIResponse(query);
+    if (algoliaSearch.source === 'algolia' && algoliaSearch.results.length > 0) {
+      // Use Algolia results
+      source = 'algolia';
+      responseData = {
+        source: 'algolia',
+        query,
+        reply: `Found ${algoliaSearch.results.length} products matching "${query}". These are real products from our catalog.`,
+        results: algoliaSearch.results,
+        suggestions: stubResults.suggestions // Use stub suggestions as fallback
+      };
+    } else if (process.env.OPENAI_API_KEY) {
+      // Fall back to OpenAI
+      try {
+        responseData = await getOpenAIResponse(query);
+        source = responseData.source as 'openai';
+      } catch (error) {
+        console.error('OpenAI fallback failed:', error);
+        responseData = stubResults;
+        source = 'stub';
+      }
     } else {
-      responseData = generateStubResponse(query);
+      // Use stub response
+      responseData = stubResults;
+      source = 'stub';
     }
+
+    // Add timing logs
+    console.log('[chat]', { source, q: query, hits: responseData.results.length });
 
     const response: ChatResponse = {
       ok: true,
