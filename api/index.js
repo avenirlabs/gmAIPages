@@ -1,10 +1,10 @@
 ////////////////////////////////////////////////////////
 // TOP: imports + app + JSON body parsing
 ////////////////////////////////////////////////////////
-import express from "express";
-import serverless from "serverless-http";
-import { createClient } from "@supabase/supabase-js";
-import { randomUUID } from "crypto";
+const express = require("express");
+const serverless = require("serverless-http");
+const { createClient } = require("@supabase/supabase-js");
+const { randomUUID } = require("crypto");
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
@@ -553,4 +553,5 @@ app.use((err, req, res, _next) => {
   res.status(500).json({ error: err?.message || "Internal error" });
 });
 
-export default serverless(app);
+module.exports = app;
+module.exports.handler = serverless(app);
