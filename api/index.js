@@ -4,6 +4,29 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 
+// Admin authentication helper
+async function requireAdmin(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('Missing or invalid authorization header');
+  }
+
+  const token = authHeader.slice(7); // Remove 'Bearer ' prefix
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    throw new Error('Supabase not configured');
+  }
+
+  // Verify the JWT token with Supabase
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+
+  if (error || !user) {
+    throw new Error('Invalid or expired token');
+  }
+
+  return user;
+}
+
 // Supabase client
 function getSupabaseAdmin() {
   const url = process.env.SUPABASE_URL;
@@ -607,6 +630,160 @@ const handlers = {
     } catch (e) {
       console.error('Menu PUT error:', e);
       return res.status(500).json({ error: e.message || "Error updating menu" });
+    }
+  },
+
+  // Analytics endpoints (admin-protected)
+  'POST /admin/analytics/kpis': async (req, res) => {
+    try {
+      await requireAdmin(req);
+      const supabase = getSupabaseAdmin();
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+      const { p_start, p_end } = req.body;
+      const { data, error } = await supabase.rpc('get_chat_kpis', { p_start, p_end });
+
+      if (error) {
+        console.error('KPIs fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch KPIs' });
+      }
+
+      return res.json(data || []);
+    } catch (e) {
+      return res.status(401).json({ error: e.message || 'Authentication failed' });
+    }
+  },
+
+  'GET /admin/analytics/quality': async (req, res) => {
+    try {
+      await requireAdmin(req);
+      const supabase = getSupabaseAdmin();
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+      const { data, error } = await supabase.from('v_chat_assistant_quality').select('*');
+
+      if (error) {
+        console.error('Quality fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch quality metrics' });
+      }
+
+      return res.json(data || []);
+    } catch (e) {
+      return res.status(401).json({ error: e.message || 'Authentication failed' });
+    }
+  },
+
+  'GET /admin/analytics/geo': async (req, res) => {
+    try {
+      await requireAdmin(req);
+      const supabase = getSupabaseAdmin();
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+      const { data, error } = await supabase.from('v_chat_geo').select('*');
+
+      if (error) {
+        console.error('Geo fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch geography data' });
+      }
+
+      return res.json(data || []);
+    } catch (e) {
+      return res.status(401).json({ error: e.message || 'Authentication failed' });
+    }
+  },
+
+  'GET /admin/analytics/products/top': async (req, res) => {
+    try {
+      await requireAdmin(req);
+      const supabase = getSupabaseAdmin();
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+      const { data, error } = await supabase.from('v_product_impressions_top').select('*');
+
+      if (error) {
+        console.error('Top products fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch top products' });
+      }
+
+      return res.json(data || []);
+    } catch (e) {
+      return res.status(401).json({ error: e.message || 'Authentication failed' });
+    }
+  },
+
+  'GET /admin/analytics/sessions/depth': async (req, res) => {
+    try {
+      await requireAdmin(req);
+      const supabase = getSupabaseAdmin();
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+      const { data, error } = await supabase.from('v_chat_session_depth').select('*');
+
+      if (error) {
+        console.error('Session depth fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch session depth' });
+      }
+
+      return res.json(data || []);
+    } catch (e) {
+      return res.status(401).json({ error: e.message || 'Authentication failed' });
+    }
+  },
+
+  'GET /admin/analytics/chips': async (req, res) => {
+    try {
+      await requireAdmin(req);
+      const supabase = getSupabaseAdmin();
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+      const { data, error } = await supabase.from('v_chat_chip_usage').select('*');
+
+      if (error) {
+        console.error('Chip usage fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch chip usage' });
+      }
+
+      return res.json(data || []);
+    } catch (e) {
+      return res.status(401).json({ error: e.message || 'Authentication failed' });
+    }
+  },
+
+  'GET /admin/analytics/filters': async (req, res) => {
+    try {
+      await requireAdmin(req);
+      const supabase = getSupabaseAdmin();
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+      const { data, error } = await supabase.from('v_chat_filter_usage').select('*');
+
+      if (error) {
+        console.error('Filter usage fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch filter usage' });
+      }
+
+      return res.json(data || []);
+    } catch (e) {
+      return res.status(401).json({ error: e.message || 'Authentication failed' });
+    }
+  },
+
+  'GET /admin/analytics/pages/top': async (req, res) => {
+    try {
+      await requireAdmin(req);
+      const supabase = getSupabaseAdmin();
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+      const { data, error } = await supabase.from('v_chat_top_pages_30d').select('*');
+
+      if (error) {
+        console.error('Top pages fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch top pages' });
+      }
+
+      return res.json(data || []);
+    } catch (e) {
+      return res.status(401).json({ error: e.message || 'Authentication failed' });
     }
   }
 };

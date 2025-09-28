@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import MenuEditor from "@/components/admin/MenuEditor";
+import ChatAnalytics from "@/pages/admin/ChatAnalytics";
 
 interface PageRow {
   id: string;
@@ -39,7 +40,7 @@ export default function Admin() {
   const [chipDraft, setChipDraft] = useState("");
   const [navLinks, setNavLinks] = useState<NavLinkRow[]>([]);
   const [navLoading, setNavLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"pages" | "navigation">("pages");
+  const [activeTab, setActiveTab] = useState<"pages" | "navigation" | "analytics">("pages");
 
   useEffect(() => {
     supabase.auth
@@ -257,6 +258,17 @@ export default function Admin() {
               )}
             >
               Navigation
+            </button>
+            <button
+              onClick={() => setActiveTab("analytics")}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                activeTab === "analytics"
+                  ? "bg-white text-[#155ca5] shadow-sm"
+                  : "text-[#155ca5]/70 hover:text-[#155ca5]"
+              )}
+            >
+              Analytics
             </button>
           </div>
         </div>
@@ -662,9 +674,12 @@ export default function Admin() {
           </div>
         </section>
         </div>
-      ) : (
+      ) : activeTab === "navigation" ? (
         // Navigation Tab Content - Visual Editor
         <MenuEditor />
+      ) : (
+        // Analytics Tab Content
+        <ChatAnalytics />
       )}
     </div>
   );

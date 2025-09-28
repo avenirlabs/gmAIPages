@@ -26,6 +26,7 @@ import {
   getProducts,
   clearWooCache,
 } from "./routes/woocommerce";
+import analyticsRouter from "./routes/analytics";
 
 function allowedOrigins(): string[] {
   const env = process.env.ALLOWED_ORIGINS || "";
@@ -163,6 +164,8 @@ export function createServer() {
   map("get", "/api/woocommerce/featured", getFeaturedProducts);
   map("get", "/api/woocommerce/products", getProducts);
 
+  // Analytics routes (admin-protected)
+  app.use("/api/admin/analytics", analyticsRouter);
 
   // Central error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
