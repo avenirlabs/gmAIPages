@@ -38,26 +38,24 @@ export function usePagedChatResults(options: UsePagedChatResultsOptions = {}): U
       const timeout = setTimeout(() => controller.abort(), 20000);
 
       try {
-        const tryUrls = ["/api/gifts/chat"];
+        // Convert message to query format for our simple endpoint
+        const requestBody = {
+          query: payload.message,
+          topK: 5
+        };
 
-        let lastErr: any = null;
-        for (const url of tryUrls) {
-          try {
-            const res = await fetch(url, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-              signal: controller.signal,
-            });
-            if (res.ok) {
-              return await res.json();
-            }
-            lastErr = new Error(`${url} -> ${res.status}`);
-          } catch (e) {
-            lastErr = e;
-          }
+        const res = await fetch("/api/gifts/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
+        });
+
+        if (res.ok) {
+          return await res.json();
         }
-        throw lastErr || new Error("All endpoints failed");
+
+        throw new Error(`API request failed with status ${res.status}`);
       } finally {
         clearTimeout(timeout);
       }
