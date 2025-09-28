@@ -29,40 +29,60 @@ export default async function handler(req, res) {
     );
 
     if (req.method === "GET") {
-      // First, let's see what slugs are available for debugging
-      const { data: allMenus } = await sb
-        .from("menus")
-        .select("slug");
+      try {
+        // First, let's see what slugs are available for debugging
+        const { data: allMenus, error: listError } = await sb
+          .from("menus")
+          .select("slug");
 
-      // Now try to get the specific menu
-      const { data, error } = await sb
-        .from("menus")
-        .select("data")
-        .eq("slug", slug);
+        if (listError) {
+          console.error("Error listing menus:", listError);
+          return res.status(500).json({
+            error: "Database error listing menus",
+            details: listError.message,
+            requestedSlug: slug
+          });
+        }
 
-      if (error) {
-        console.error("GET menus error:", error);
+        // Now try to get the specific menu
+        const { data, error } = await sb
+          .from("menus")
+          .select("data")
+          .eq("slug", slug);
+
+        if (error) {
+          console.error("GET menus error:", error);
+          return res.status(500).json({
+            error: error.message,
+            requestedSlug: slug,
+            availableSlugs: allMenus?.map(m => m.slug) || [],
+            totalMenus: allMenus?.length || 0
+          });
+        }
+
+        if (!data || data.length === 0) {
+          return res.status(404).json({
+            error: "Menu not found",
+            requestedSlug: slug,
+            availableSlugs: allMenus?.map(m => m.slug) || [],
+            totalMenus: allMenus?.length || 0
+          });
+        }
+
+        const menuData = data[0]; // Get first result instead of using .single()
+        const items = Array.isArray(menuData?.data?.items)
+          ? menuData.data.items
+          : (Array.isArray(menuData?.data) ? menuData.data : []);
+
+        return res.json({ items });
+      } catch (queryError) {
+        console.error("Unexpected menu query error:", queryError);
         return res.status(500).json({
-          error: error.message,
-          requestedSlug: slug,
-          availableSlugs: allMenus?.map(m => m.slug) || []
+          error: "Unexpected database error",
+          details: queryError.message,
+          requestedSlug: slug
         });
       }
-
-      if (!data || data.length === 0) {
-        return res.status(404).json({
-          error: "Menu not found",
-          requestedSlug: slug,
-          availableSlugs: allMenus?.map(m => m.slug) || []
-        });
-      }
-
-      const menuData = data[0]; // Get first result instead of using .single()
-      const items = Array.isArray(menuData?.data?.items)
-        ? menuData.data.items
-        : (Array.isArray(menuData?.data) ? menuData.data : []);
-
-      return res.json({ items });
     }
 
     if (req.method === "PUT") {
