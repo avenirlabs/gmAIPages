@@ -1,5 +1,5 @@
 // api/_services/search.ts
-import algoliasearch, { SearchClient } from 'algoliasearch';
+import { algoliasearch } from 'algoliasearch';
 
 type Cursor = string | null;
 
@@ -18,8 +18,8 @@ const getIndex = () => {
   const apiKey = process.env.ALGOLIA_API_KEY;
   const indexName = process.env.ALGOLIA_INDEX_NAME;
   if (!appId || !apiKey || !indexName) return null;
-  const client: SearchClient = algoliasearch(appId, apiKey);
-  const index = client.initIndex(indexName);
+  const client = algoliasearch(appId, apiKey);
+  const index = (client as any).initIndex(indexName);
   return { index, indexName };
 };
 
