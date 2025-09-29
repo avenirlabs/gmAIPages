@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
 import { searchProductsPaginated } from '../_services/search.ts';
+import { buildRefineChips } from '../_services/chips.ts';
 
 // Production guard: if true, return 503 when Algolia unavailable (no stubs)
 const REQUIRE_ALGOLIA = String(process.env.REQUIRE_ALGOLIA || '').toLowerCase() === 'true';
@@ -328,7 +329,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         query,
         reply: `Found ${searchResult.products.length} products matching "${query}". These are real products from our catalog.`,
         results: searchResult.products,
-        suggestions: stubResults.suggestions, // Use stub suggestions as fallback
+        suggestions: buildRefineChips(query, searchResult.products),
         pageInfo: searchResult.pageInfo,
         meta: {
           queryLatencyMs: searchResult.timings.queryLatencyMs,
@@ -353,12 +354,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (process.env.OPENAI_API_KEY) {
       // Fall back to OpenAI
       try {
-        responseData = await getOpenAIResponse(query);
+        const openaiResponse = await getOpenAIResponse(query);
+        responseData = {
+          ...openaiResponse,
+          suggestions: buildRefineChips(query, openaiResponse.results || [])
+        };
         source = responseData.source as 'openai';
       } catch (error) {
         console.error('OpenAI fallback failed:', error);
         responseData = {
           ...stubResults,
+          suggestions: buildRefineChips(query, stubResults.results || []),
           pageInfo: searchResult.pageInfo,
           meta: {
             queryLatencyMs: searchResult.timings.queryLatencyMs,
@@ -372,6 +378,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Use stub response
       responseData = {
         ...stubResults,
+        suggestions: buildRefineChips(query, stubResults.results || []),
         pageInfo: searchResult.pageInfo,
         meta: {
           queryLatencyMs: searchResult.timings.queryLatencyMs,
