@@ -4,6 +4,43 @@ import { randomUUID } from 'crypto';
 // Defensive array utility
 const safeArray = <T>(x: T[] | undefined | null): T[] => Array.isArray(x) ? x : [];
 
+// UI Response Adapter
+type UIResponse = {
+  ok: true;
+  reply: string;
+  products: any[];
+  refineChips: string[];
+  pageInfo: { cursor: string | null; hasMore: boolean };
+  meta: Record<string, any>;
+};
+
+function toUIResponse(input: {
+  ok: boolean;
+  source: 'algolia'|'openai'|'stub';
+  query: string;
+  results?: any[];
+  suggestions?: string[];
+  reply?: string;
+  requestId?: string;
+  pageInfo?: { cursor?: string | null; hasMore?: boolean };
+  meta?: Record<string, any>;
+}): UIResponse {
+  // Defaults to prevent undefined.forEach crashes in UI
+  const products = Array.isArray(input.results) ? input.results : [];
+  const refineChips = Array.isArray(input.suggestions) ? input.suggestions : [];
+  const reply = typeof input.reply === 'string' ? input.reply : '';
+  const pageInfo = {
+    cursor: input.pageInfo?.cursor ?? null,
+    hasMore: Boolean(input.pageInfo?.hasMore),
+  };
+  const meta = {
+    ...(input.meta ?? {}),
+    source: input.source,
+    requestId: input.requestId ?? undefined,
+  };
+  return { ok: true, reply, products, refineChips, pageInfo, meta };
+}
+
 // Algolia integration (inlined to avoid import issues in serverless)
 interface AlgoliaHit {
   objectID: string;
@@ -335,10 +372,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      ok: false,
-      error: 'Method not allowed. Use POST.'
+    const uiPayload = toUIResponse({
+      ok: true,
+      source: 'stub',
+      query: '',
+      results: [],
+      suggestions: [],
+      reply: 'Method not allowed. Use POST.',
     });
+    return res.status(405).json(uiPayload);
   }
 
   const requestId = randomUUID();
@@ -356,20 +398,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body = req.body;
       }
     } catch {
-      return res.status(400).json({
-        ok: false,
-        error: 'Invalid JSON body',
-        requestId
+      const uiPayload = toUIResponse({
+        ok: true,
+        source: 'stub',
+        query: '',
+        results: [],
+        suggestions: [],
+        reply: 'Invalid JSON body',
+        requestId,
       });
+      return res.status(400).json(uiPayload);
     }
 
     // Validate required fields
     if (!body || typeof body.query !== 'string' || !body.query.trim()) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Missing or invalid query parameter',
-        requestId
+      const uiPayload = toUIResponse({
+        ok: true,
+        source: 'stub',
+        query: '',
+        results: [],
+        suggestions: [],
+        reply: 'Missing or invalid query parameter',
+        requestId,
       });
+      return res.status(400).json(uiPayload);
     }
 
     const query = body.query.trim();
@@ -413,20 +465,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Add timing logs
     console.log('[chat]', { source, q: query, hits: responseData.results.length });
 
-    const response: ChatResponse = {
+    const uiPayload = toUIResponse({
       ok: true,
+      source,
+      query,
+      results: responseData.results,
+      suggestions: responseData.suggestions,
+      reply: responseData.reply,
       requestId,
-      ...responseData
-    };
+      pageInfo: responseData.pageInfo,
+      meta: responseData.meta,
+    });
 
-    return res.status(200).json(response);
+    return res.status(200).json(uiPayload);
 
   } catch (error) {
     console.error('Chat API error:', error);
-    return res.status(500).json({
-      ok: false,
-      error: 'Internal server error',
-      requestId
+    const uiPayload = toUIResponse({
+      ok: true,
+      source: 'stub',
+      query: '',
+      results: [],
+      suggestions: [],
+      reply: 'Sorry, I had trouble fetching results. Please try again.',
+      requestId,
     });
+    return res.status(500).json(uiPayload);
   }
 }
