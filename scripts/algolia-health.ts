@@ -1,6 +1,6 @@
 // scripts/algolia-health.ts
 // Algolia index health check and settings inspection
-import { algoliasearch } from 'algoliasearch';
+import algoliasearch from 'algoliasearch';
 
 async function main() {
   try {

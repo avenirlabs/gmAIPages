@@ -1,5 +1,5 @@
 // api/_services/search.ts
-import { algoliasearch } from 'algoliasearch';
+import algoliasearch from 'algoliasearch';
 
 type Cursor = string | null;
 
@@ -18,8 +18,16 @@ const getIndex = () => {
   const apiKey = process.env.ALGOLIA_API_KEY;
   const indexName = process.env.ALGOLIA_INDEX_NAME;
   if (!appId || !apiKey || !indexName) return null;
+
   const client = algoliasearch(appId, apiKey);
-  const index = (client as any).initIndex(indexName);
+
+  // Runtime assertion for proper client shape
+  if (typeof (client as any)?.initIndex !== 'function') {
+    console.error('[algolia] invalid client – missing initIndex', { keys: Object.keys(client || {}) });
+    throw new Error('Algolia client misconfigured: initIndex missing (check import)');
+  }
+
+  const index = client.initIndex(indexName);
   return { index, indexName };
 };
 
