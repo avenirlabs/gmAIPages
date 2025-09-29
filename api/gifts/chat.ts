@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
 
+// Defensive array utility
+const safeArray = <T>(x: T[] | undefined | null): T[] => Array.isArray(x) ? x : [];
+
 // Algolia integration (inlined to avoid import issues in serverless)
 interface AlgoliaHit {
   objectID: string;
@@ -111,7 +114,7 @@ async function searchAlgolia(q: string, topK: number = 10): Promise<AlgoliaSearc
       }
     });
 
-    const results = searchResponse.hits.map((hit: any) => mapHit(hit as AlgoliaHit));
+    const results = safeArray(searchResponse.hits).map((hit: any) => mapHit(hit as AlgoliaHit));
 
     return {
       source: 'algolia',
@@ -295,7 +298,7 @@ async function getOpenAIResponse(query: string): Promise<Omit<ChatResponse, 'ok'
       throw new Error('Invalid response structure from OpenAI');
     }
 
-    const results = parsed.results.slice(0, 4).map((item: any, index: number) => ({
+    const results = safeArray(parsed.results).slice(0, 4).map((item: any, index: number) => ({
       id: `openai_${index + 1}`,
       title: String(item.title || 'Gift Item'),
       url: String(item.url || '/products/item'),
@@ -312,7 +315,7 @@ async function getOpenAIResponse(query: string): Promise<Omit<ChatResponse, 'ok'
       query,
       reply: `Found ${results.length} AI-powered gift suggestions for "${query}". These recommendations are tailored to your search.`,
       results,
-      suggestions: parsed.suggestions.slice(0, 5)
+      suggestions: safeArray(parsed.suggestions).slice(0, 5)
     };
   } catch (error) {
     console.error('OpenAI API error:', error);
