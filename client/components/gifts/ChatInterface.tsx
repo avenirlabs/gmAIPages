@@ -59,7 +59,7 @@ export function ChatInterface({
   // Calculate active chips for visual state
   const activeChips = useMemo(() => {
     const active = new Set<string>();
-    lastRefine.forEach((chip) => {
+    (lastRefine || []).forEach((chip) => {
       if (isChipActive(chip, selectedFilters)) {
         active.add(chip);
       }
@@ -163,7 +163,7 @@ export function ChatInterface({
           broadened: data.meta?.broadened || false,
         };
         setTurns((t) => [...t, assistant]);
-        setLastRefine(data.refineChips);
+        setLastRefine(data.refineChips || []);
         setLastFacets(data.facets || {});
       }
     },

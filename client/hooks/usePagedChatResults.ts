@@ -63,12 +63,12 @@ export function usePagedChatResults(options: UsePagedChatResultsOptions = {}): U
     onSuccess: (data, variables) => {
       // If this is the first page (no cursor), reset items
       if (!variables.cursor) {
-        setItems(data.products);
-        setReply(data.reply);
-        setRefineChips(data.refineChips);
+        setItems(data.products || []);
+        setReply(data.reply || '');
+        setRefineChips(data.refineChips || []);
       } else {
         // Append new items for subsequent pages
-        setItems(prev => [...prev, ...data.products]);
+        setItems(prev => [...prev, ...(data.products || [])]);
       }
 
       setPageInfo(data.pageInfo);
