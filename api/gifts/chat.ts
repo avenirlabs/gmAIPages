@@ -1,6 +1,128 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
-import { searchAlgolia } from '../_services/algolia.ts';
+
+// Algolia integration (inlined to avoid import issues in serverless)
+interface AlgoliaHit {
+  objectID: string;
+  title?: string;
+  name?: string;
+  product_title?: string;
+  heading?: string;
+  url?: string;
+  permalink?: string;
+  slug?: string;
+  handle?: string;
+  image?: string;
+  images?: string[];
+  thumbnail?: string;
+  _rankingInfo?: { nbExactWords?: number; };
+  [key: string]: any;
+}
+
+interface MappedHit {
+  id: string;
+  title: string;
+  url: string;
+  image: string | null;
+  score: number;
+  reason: string;
+  price?: number;
+  currency?: string;
+  description?: string;
+}
+
+interface AlgoliaSearchResult {
+  source: 'algolia' | 'stub';
+  results: MappedHit[];
+}
+
+async function getAlgoliaIndex() {
+  try {
+    const appId = process.env.ALGOLIA_APP_ID;
+    const apiKey = process.env.ALGOLIA_API_KEY;
+    const indexName = process.env.ALGOLIA_INDEX_NAME;
+
+    if (!appId || !apiKey || !indexName) {
+      return null;
+    }
+
+    const mod = await import('algoliasearch');
+    const { algoliasearch } = mod;
+
+    if (typeof algoliasearch !== 'function') {
+      throw new Error(`algoliasearch is not a function, got ${typeof algoliasearch}`);
+    }
+
+    const client = algoliasearch(appId, apiKey);
+    return { client, indexName };
+  } catch (error) {
+    console.error('[algolia]', { msg: 'Failed to initialize', error: error?.message });
+    return null;
+  }
+}
+
+function mapHit(hit: AlgoliaHit): MappedHit {
+  const title = hit.title || hit.name || hit.product_title || hit.heading || String(hit.objectID);
+
+  let url: string;
+  if (hit.url) {
+    url = hit.url;
+  } else if (hit.permalink) {
+    url = hit.permalink;
+  } else if (hit.slug) {
+    url = `/products/${hit.slug}`;
+  } else if (hit.handle) {
+    url = `/products/${hit.handle}`;
+  } else {
+    url = `/products/${hit.objectID}`;
+  }
+
+  const image = hit.image || hit.images?.[0] || hit.thumbnail || null;
+  const score = hit._rankingInfo?.nbExactWords || 1;
+
+  return {
+    id: hit.objectID,
+    title,
+    url,
+    image,
+    score,
+    reason: 'algolia match',
+    price: hit.price ? Number(hit.price) : undefined,
+    currency: hit.currency || 'USD',
+    description: hit.description || title
+  };
+}
+
+async function searchAlgolia(q: string, topK: number = 10): Promise<AlgoliaSearchResult> {
+  try {
+    const algoliaConfig = await getAlgoliaIndex();
+
+    if (!algoliaConfig) {
+      return { source: 'stub', results: [] };
+    }
+
+    const { client, indexName } = algoliaConfig;
+
+    const searchResponse = await client.searchSingleIndex({
+      indexName,
+      searchParams: {
+        query: q,
+        hitsPerPage: topK
+      }
+    });
+
+    const results = searchResponse.hits.map((hit: any) => mapHit(hit as AlgoliaHit));
+
+    return {
+      source: 'algolia',
+      results
+    };
+
+  } catch (error) {
+    console.error('[algolia]', { msg: error?.message });
+    return { source: 'stub', results: [] };
+  }
+}
 
 interface ChatRequest {
   query: string;
