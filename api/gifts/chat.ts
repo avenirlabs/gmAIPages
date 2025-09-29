@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
-import { searchProductsPaginated } from '../_services/search.ts';
-import { buildRefineChips } from '../_services/chips.ts';
+import { searchProductsPaginated } from '../_services/search';
+import { buildRefineChips } from '../_services/chips';
 
 // Production guard: if true, return 503 when Algolia unavailable (no stubs)
 const REQUIRE_ALGOLIA = String(process.env.REQUIRE_ALGOLIA || '').toLowerCase() === 'true';
@@ -45,7 +45,7 @@ type UIResponse = {
   reply: string;
   products: any[];
   refineChips: string[];
-  pageInfo: { cursor: string | null; hasMore: boolean };
+  pageInfo: { cursor: string | null; hasMore: boolean; [k: string]: any };
   meta: Record<string, any>;
 };
 
@@ -57,22 +57,18 @@ function toUIResponse(input: {
   suggestions?: string[];
   reply?: string;
   requestId?: string;
-  pageInfo?: { cursor?: string | null; hasMore?: boolean };
+  pageInfo?: { cursor?: string | null; hasMore?: boolean; [k: string]: any };
   meta?: Record<string, any>;
 }): UIResponse {
-  // Defaults to prevent undefined.forEach crashes in UI
   const products = Array.isArray(input.results) ? input.results : [];
   const refineChips = Array.isArray(input.suggestions) ? input.suggestions : [];
   const reply = typeof input.reply === 'string' ? input.reply : '';
   const pageInfo = {
     cursor: input.pageInfo?.cursor ?? null,
     hasMore: Boolean(input.pageInfo?.hasMore),
+    ...input.pageInfo
   };
-  const meta = {
-    ...(input.meta ?? {}),
-    source: input.source,
-    requestId: input.requestId ?? undefined,
-  };
+  const meta = { ...(input.meta ?? {}), source: input.source, requestId: input.requestId ?? undefined };
   return { ok: true, reply, products, refineChips, pageInfo, meta };
 }
 
@@ -138,7 +134,7 @@ const PRODUCT_SUGGESTIONS = {
   wallet: { title: 'Leather Wallet', url: '/products/leather-wallet', reason: 'Practical gift with premium quality' }
 };
 
-function generateStubResponse(query: string): Omit<ChatResponse, 'ok' | 'requestId'> {
+function generateStubResponse(query: string) {
   const normalizedQuery = query.toLowerCase();
 
   // Generate refine chips based on query keywords
@@ -212,7 +208,7 @@ function generateStubResponse(query: string): Omit<ChatResponse, 'ok' | 'request
   };
 }
 
-async function getOpenAIResponse(query: string): Promise<Omit<ChatResponse, 'ok' | 'requestId'>> {
+async function getOpenAIResponse(query: string) {
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -358,25 +354,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Try paginated Algolia search first
     const searchResult = await searchProductsPaginated(query, { topK, cursor, filters, soft });
 
-    let responseData: Omit<ChatResponse, 'ok' | 'requestId'>;
-    let source: 'algolia' | 'openai' | 'stub' = 'stub';
-
     if (searchResult.timings.source === 'algolia' && searchResult.products.length > 0) {
       // Use Algolia results
-      source = 'algolia';
-      responseData = {
+      const uiPayload = toUIResponse({
+        ok: true,
         source: 'algolia',
         query,
-        reply: `Found ${searchResult.products.length} products matching "${query}". These are real products from our catalog.`,
         results: searchResult.products,
         suggestions: buildRefineChips(query, searchResult.products),
+        reply: `Found ${searchResult.products.length} products matching "${query}". These are real products from our catalog.`,
+        requestId,
         pageInfo: searchResult.pageInfo,
         meta: {
           queryLatencyMs: searchResult.timings.queryLatencyMs,
           source: searchResult.timings.source,
           broadened: Boolean(searchResult.broadened)
         }
-      };
+      });
+      return res.status(200).json(uiPayload);
     } else if (REQUIRE_ALGOLIA) {
       // No mock data allowed in required mode (prod)
       console.warn('[chat] algolia required but unavailable; returning 503');
@@ -395,56 +390,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Fall back to OpenAI
       try {
         const openaiResponse = await getOpenAIResponse(query);
-        responseData = {
-          ...openaiResponse,
-          suggestions: buildRefineChips(query, openaiResponse.results || [])
-        };
-        source = responseData.source as 'openai';
+        const uiPayload = toUIResponse({
+          ok: true,
+          source: 'openai',
+          query,
+          results: openaiResponse.results,
+          suggestions: buildRefineChips(query, openaiResponse.results || []),
+          reply: openaiResponse.reply,
+          requestId,
+          pageInfo: searchResult.pageInfo,
+          meta: {
+            queryLatencyMs: searchResult.timings.queryLatencyMs,
+            source: 'openai',
+            broadened: false
+          }
+        });
+        console.log('[chat]', { source: 'openai', q: query, hits: openaiResponse.results?.length || 0 });
+        return res.status(200).json(uiPayload);
       } catch (error) {
         console.error('OpenAI fallback failed:', error);
-        responseData = {
-          ...stubResults,
+        const uiPayload = toUIResponse({
+          ok: true,
+          source: 'stub',
+          query,
+          results: stubResults.results,
           suggestions: buildRefineChips(query, stubResults.results || []),
+          reply: stubResults.reply,
+          requestId,
           pageInfo: searchResult.pageInfo,
           meta: {
             queryLatencyMs: searchResult.timings.queryLatencyMs,
             source: 'stub',
             broadened: false
           }
-        };
-        source = 'stub';
+        });
+        console.log('[chat]', { source: 'stub', q: query, hits: stubResults.results?.length || 0 });
+        return res.status(200).json(uiPayload);
       }
     } else {
       // Use stub response
-      responseData = {
-        ...stubResults,
+      const uiPayload = toUIResponse({
+        ok: true,
+        source: 'stub',
+        query,
+        results: stubResults.results,
         suggestions: buildRefineChips(query, stubResults.results || []),
+        reply: stubResults.reply,
+        requestId,
         pageInfo: searchResult.pageInfo,
         meta: {
           queryLatencyMs: searchResult.timings.queryLatencyMs,
           source: 'stub',
           broadened: false
         }
-      };
-      source = 'stub';
+      });
+      console.log('[chat]', { source: 'stub', q: query, hits: stubResults.results?.length || 0 });
+      return res.status(200).json(uiPayload);
     }
-
-    // Add timing logs
-    console.log('[chat]', { source, q: query, hits: responseData.results?.length || 0 });
-
-    const uiPayload = toUIResponse({
-      ok: true,
-      source,
-      query,
-      results: responseData.results,
-      suggestions: responseData.suggestions,
-      reply: responseData.reply,
-      requestId,
-      pageInfo: responseData.pageInfo,
-      meta: responseData.meta,
-    });
-
-    return res.status(200).json(uiPayload);
 
   } catch (error) {
     console.error('Chat API error:', error);

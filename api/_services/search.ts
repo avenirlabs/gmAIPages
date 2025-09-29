@@ -1,11 +1,11 @@
 // api/_services/search.ts
-import { algoliasearch } from 'algoliasearch';
+import algoliasearch, { SearchClient } from 'algoliasearch';
 
 type Cursor = string | null;
 
 const encodeCursor = (page: number | null) => page == null ? null : Buffer.from(String(page)).toString('base64');
 
-const decodeCursor = (cursor: Cursor) => {
+const decodeCursor = (cursor: Cursor | undefined) => {
   try {
     return cursor ? Number(Buffer.from(cursor, 'base64').toString('utf8')) : 0;
   } catch {
@@ -18,8 +18,9 @@ const getIndex = () => {
   const apiKey = process.env.ALGOLIA_API_KEY;
   const indexName = process.env.ALGOLIA_INDEX_NAME;
   if (!appId || !apiKey || !indexName) return null;
-  const client = algoliasearch(appId, apiKey);
-  return { index: client.initIndex(indexName), indexName };
+  const client: SearchClient = algoliasearch(appId, apiKey);
+  const index = client.initIndex(indexName);
+  return { index, indexName };
 };
 
 export type SearchOpts = {
