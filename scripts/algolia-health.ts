@@ -1,6 +1,7 @@
 // scripts/algolia-health.ts
 // Algolia index health check and settings inspection
-import algoliasearch from 'algoliasearch';
+// Use the Node build explicitly to avoid dist/browser resolution
+import { algoliasearch } from 'algoliasearch/dist/node';
 
 async function main() {
   try {

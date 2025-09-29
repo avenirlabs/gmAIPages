@@ -1,5 +1,6 @@
 // api/_services/search.ts
-import algoliasearch from 'algoliasearch';
+// Use the Node build explicitly to avoid dist/browser resolution
+import { algoliasearch } from 'algoliasearch/dist/node';
 
 type Cursor = string | null;
 
@@ -20,13 +21,10 @@ const getIndex = () => {
   if (!appId || !apiKey || !indexName) return null;
 
   const client = algoliasearch(appId, apiKey);
-
-  // Runtime assertion for proper client shape
   if (typeof (client as any)?.initIndex !== 'function') {
     console.error('[algolia] invalid client – missing initIndex', { keys: Object.keys(client || {}) });
-    throw new Error('Algolia client misconfigured: initIndex missing (check import)');
+    throw new Error('Algolia client misconfigured: expected Node build (dist/node) with initIndex');
   }
-
   const index = client.initIndex(indexName);
   return { index, indexName };
 };

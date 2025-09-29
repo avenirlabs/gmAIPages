@@ -1,6 +1,7 @@
 // scripts/algolia-ensure-settings.ts
 // Ensure Algolia index has proper settings for faceting and search
-import algoliasearch from 'algoliasearch';
+// Use the Node build explicitly to avoid dist/browser resolution
+import { algoliasearch } from 'algoliasearch/dist/node';
 
 function uniq<T>(arr: T[]): T[] {
   return [...new Set(arr.filter(Boolean))];
