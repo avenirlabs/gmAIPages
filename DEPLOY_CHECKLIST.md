@@ -12,6 +12,13 @@ Configure these environment variables in Vercel Dashboard → Project → Settin
 ### No Mock in Production
 - `REQUIRE_ALGOLIA=true` (Production) - Forces 503 when Algolia unavailable (no stubs)
 
+### Prod Algolia
+- `REQUIRE_ALGOLIA=true` (Production)
+- `ALGOLIA_APP_ID`
+- `ALGOLIA_API_KEY` (search-only)
+- `ALGOLIA_INDEX_NAME`
+- `OPENAI_API_KEY` (optional)
+
 ### Optional Enhancements
 - `OPENAI_API_KEY` - For AI-enhanced responses (falls back to stub if missing)
 - `SUPABASE_URL` - For CMS functionality
