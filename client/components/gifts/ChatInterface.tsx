@@ -95,10 +95,12 @@ export function ChatInterface({
       const t = setTimeout(() => controller.abort(), 20000);
 
       try {
-        // Convert message to query format for our simple endpoint
         const requestBody = {
           query: payload.message,
-          topK: 5
+          topK: 8,
+          cursor: payload.cursor ?? null,
+          filters: payload.filters ?? {},
+          soft: false
         };
 
         const res = await fetch("/api/gifts/chat", {

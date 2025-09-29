@@ -2,6 +2,19 @@ import { useState, useCallback, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { ChatRequestBody, ChatResponseBody, ProductItem, PageInfo } from '@shared/api';
 
+type ChatVars = {
+  message: string;
+  topK?: number;
+  cursor?: string | null;
+  filters?: {
+    relation?: string[];
+    occasion?: string[];
+    interest?: string[];
+    priceRange?: [number, number] | null
+  };
+  soft?: boolean;
+};
+
 interface UsePagedChatResultsOptions {
   initialPayload?: {
     message: string;
@@ -32,16 +45,18 @@ export function usePagedChatResults(options: UsePagedChatResultsOptions = {}): U
   const [error, setError] = useState<string | null>(null);
   const loadingRef = useRef(false);
 
-  const mutation = useMutation<ChatResponseBody, Error, ChatRequestBody>({
-    mutationFn: async (payload) => {
+  const mutation = useMutation<ChatResponseBody, Error, ChatVars>({
+    mutationFn: async (variables) => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 20000);
 
       try {
-        // Convert message to query format for our simple endpoint
         const requestBody = {
-          query: payload.message,
-          topK: 5
+          query: variables.message,
+          topK: variables.topK ?? 8,
+          cursor: variables.cursor ?? null,
+          filters: variables.filters ?? {},
+          soft: variables.soft ?? false
         };
 
         const res = await fetch("/api/gifts/chat", {
@@ -82,13 +97,8 @@ export function usePagedChatResults(options: UsePagedChatResultsOptions = {}): U
     },
   });
 
-  const loadMore = useCallback(() => {
+  const loadMore = useCallback((lastQuery: string, filters: any = {}) => {
     if (!pageInfo?.nextCursor || loadingRef.current || mutation.isPending) {
-      return;
-    }
-
-    if (!options.initialPayload) {
-      setError('No initial payload available for pagination');
       return;
     }
 
@@ -96,11 +106,13 @@ export function usePagedChatResults(options: UsePagedChatResultsOptions = {}): U
     setError(null);
 
     mutation.mutate({
-      ...options.initialPayload,
+      message: lastQuery,
       cursor: pageInfo.nextCursor,
-      intentToken: meta?.intentToken,
+      filters,
+      topK: 8,
+      soft: false
     });
-  }, [pageInfo?.nextCursor, mutation, options.initialPayload, meta?.intentToken]);
+  }, [pageInfo?.nextCursor, mutation]);
 
   const reset = useCallback(() => {
     setItems([]);
