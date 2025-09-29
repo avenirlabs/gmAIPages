@@ -26,7 +26,7 @@ interface MappedHit {
   id: string;
   title: string;
   url: string;
-  image: string | null;
+  image?: string;
   score: number;
   reason: string;
   price?: number;
@@ -59,7 +59,7 @@ async function getAlgoliaIndex() {
     const client = algoliasearch(appId, apiKey);
     return { client, indexName };
   } catch (error) {
-    console.error('[algolia]', { msg: 'Failed to initialize', error: error?.message });
+    console.error('[algolia]', { msg: 'Failed to initialize', error: (error as Error)?.message });
     return null;
   }
 }
@@ -80,14 +80,14 @@ function mapHit(hit: AlgoliaHit): MappedHit {
     url = `/products/${hit.objectID}`;
   }
 
-  const image = hit.image || hit.images?.[0] || hit.thumbnail || null;
+  const image = hit.image || hit.images?.[0] || hit.thumbnail;
   const score = hit._rankingInfo?.nbExactWords || 1;
 
   return {
     id: hit.objectID,
     title,
     url,
-    image,
+    image: image || undefined,
     score,
     reason: 'algolia match',
     price: hit.price ? Number(hit.price) : undefined,
@@ -122,7 +122,7 @@ async function searchAlgolia(q: string, topK: number = 10): Promise<AlgoliaSearc
     };
 
   } catch (error) {
-    console.error('[algolia]', { msg: error?.message });
+    console.error('[algolia]', { msg: (error as Error)?.message });
     return { source: 'stub', results: [] };
   }
 }
@@ -315,7 +315,7 @@ async function getOpenAIResponse(query: string): Promise<Omit<ChatResponse, 'ok'
       query,
       reply: `Found ${results.length} AI-powered gift suggestions for "${query}". These recommendations are tailored to your search.`,
       results,
-      suggestions: safeArray(parsed.suggestions).slice(0, 5)
+      suggestions: safeArray(parsed.suggestions).slice(0, 5).map(s => String(s))
     };
   } catch (error) {
     console.error('OpenAI API error:', error);
