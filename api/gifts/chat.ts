@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
-import { searchProductsPaginated } from '../_services/search';
-import { buildRefineChips } from '../_services/chips';
+import { searchProductsPaginated } from '../_services/search.js';
+import { buildRefineChips } from '../_services/chips.js';
 
 // Production guard: if true, return 503 when Algolia unavailable (no stubs)
 const REQUIRE_ALGOLIA = String(process.env.REQUIRE_ALGOLIA || '').toLowerCase() === 'true';
