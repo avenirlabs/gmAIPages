@@ -9,6 +9,36 @@ const REQUIRE_ALGOLIA = String(process.env.REQUIRE_ALGOLIA || '').toLowerCase() 
 // Defensive array utility
 const safeArray = <T>(x: T[] | undefined | null): T[] => Array.isArray(x) ? x : [];
 
+// Normalize filters to arrays (handle single strings)
+const normalizeFilters = (filters: any) => {
+  if (!filters || typeof filters !== 'object') return {};
+
+  const normalized: any = {};
+
+  // Normalize relation, occasion, interest to arrays
+  ['relation', 'occasion', 'interest'].forEach(key => {
+    if (filters[key]) {
+      if (typeof filters[key] === 'string') {
+        normalized[key] = [filters[key]];
+      } else if (Array.isArray(filters[key])) {
+        normalized[key] = safeArray(filters[key]);
+      }
+    }
+  });
+
+  // Handle priceRange (must be array of 2 numbers or null)
+  if (filters.priceRange) {
+    if (Array.isArray(filters.priceRange) && filters.priceRange.length === 2) {
+      const [min, max] = filters.priceRange;
+      if (typeof min === 'number' && typeof max === 'number') {
+        normalized.priceRange = [min, max];
+      }
+    }
+  }
+
+  return normalized;
+};
+
 // UI Response Adapter
 type UIResponse = {
   ok: true;
@@ -52,6 +82,14 @@ interface ChatRequest {
   query: string;
   sessionId?: string;
   topK?: number;
+  cursor?: string | null;
+  filters?: {
+    relation?: string[];
+    occasion?: string[];
+    interest?: string[];
+    priceRange?: [number, number] | null;
+  };
+  soft?: boolean;
 }
 
 interface ChatResponse {
@@ -311,12 +349,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const query = body.query.trim();
     const topK = body.topK || 10;
     const cursor = body.cursor || null;
+    const filters = normalizeFilters(body.filters);
+    const soft = Boolean(body.soft);
 
     // Build stub results first (existing behavior)
     const stubResults = generateStubResponse(query);
 
     // Try paginated Algolia search first
-    const searchResult = await searchProductsPaginated(query, { topK, cursor });
+    const searchResult = await searchProductsPaginated(query, { topK, cursor, filters, soft });
 
     let responseData: Omit<ChatResponse, 'ok' | 'requestId'>;
     let source: 'algolia' | 'openai' | 'stub' = 'stub';
@@ -334,7 +374,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         meta: {
           queryLatencyMs: searchResult.timings.queryLatencyMs,
           source: searchResult.timings.source,
-          broadened: false
+          broadened: Boolean(searchResult.broadened)
         }
       };
     } else if (REQUIRE_ALGOLIA) {

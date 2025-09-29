@@ -25,10 +25,45 @@ const getIndex = () => {
 export type SearchOpts = {
   topK?: number;
   cursor?: Cursor;
-  // reserved for next step:
-  filters?: { relation?: string[]; occasion?: string[]; interest?: string[]; priceRange?: [number, number] };
-  soft?: boolean;
+  filters?: {
+    relation?: string[];   // e.g., ['Dad','Brother']
+    occasion?: string[];   // e.g., ['Birthday','Anniversary']
+    interest?: string[];   // e.g., ['Gamer','Foodie']
+    priceRange?: [number, number] | null; // e.g., [499, 1499]
+  };
+  soft?: boolean; // when true, relaxes filters
 };
+
+function buildAlgoliaParams(q: string, opts: SearchOpts) {
+  const pageSize = Math.max(1, Math.min(50, opts.topK ?? 10));
+  const page = Math.max(0, decodeCursor(opts.cursor));
+  const facetFilters: string[][] = [];
+  const numericFilters: string[] = [];
+
+  const rel = opts.filters?.relation ?? [];
+  const occ = opts.filters?.occasion ?? [];
+  const intr = opts.filters?.interest ?? [];
+  if (rel.length)   facetFilters.push(rel.map(v => `relation:${v}`));
+  if (occ.length)   facetFilters.push(occ.map(v => `occasion:${v}`));
+  if (intr.length)  facetFilters.push(intr.map(v => `interest:${v}`));
+  if (opts.filters?.priceRange && opts.filters.priceRange.length === 2) {
+    const [min, max] = opts.filters.priceRange;
+    if (Number.isFinite(min)) numericFilters.push(`price>=${Number(min)}`);
+    if (Number.isFinite(max)) numericFilters.push(`price<=${Number(max)}`);
+  }
+
+  return {
+    query: q,
+    page,
+    hitsPerPage: pageSize,
+    facetFilters: facetFilters.length ? facetFilters : undefined,
+    numericFilters: numericFilters.length ? numericFilters : undefined,
+    attributesToRetrieve: [
+      'objectID','title','name','product_title','heading','url','permalink','slug','handle',
+      'image','images','thumbnail','price','currency','description','relation','occasion','interest'
+    ],
+  } as const;
+}
 
 export async function searchProductsPaginated(q: string, opts: SearchOpts = {}) {
   const start = Date.now();
@@ -47,19 +82,24 @@ export async function searchProductsPaginated(q: string, opts: SearchOpts = {}) 
         hasMore: false,
         cursor: null as Cursor
       },
-      timings: { queryLatencyMs: Date.now() - start, source: 'stub' as const }
+      timings: { queryLatencyMs: Date.now() - start, source: 'stub' as const },
+      broadened: false
     };
   }
 
-  const pageSize = Math.max(1, Math.min(50, opts.topK ?? 10));
-  const page = Math.max(0, decodeCursor(opts.cursor));
+  // Run strict query first (unless opts.soft === true)
+  const strictParams = buildAlgoliaParams(q, opts);
+  let res = await cfg.index.search(strictParams.query, strictParams);
+  let broadened = false;
 
-  // (Filters soft/strict comes in next step; keep simple search now)
-  const res = await cfg.index.search(q, {
-    hitsPerPage: pageSize,
-    page,
-    attributesToRetrieve: ['objectID','title','name','product_title','heading','url','permalink','slug','handle','image','images','thumbnail','price','currency','description']
-  });
+  // If no hits and not explicitly soft, try soft fallback (remove filters)
+  if (res.nbHits === 0 && opts.soft !== true && (strictParams.facetFilters || strictParams.numericFilters)) {
+    const softParams = { ...strictParams };
+    delete softParams.facetFilters;
+    delete softParams.numericFilters;
+    res = await cfg.index.search(softParams.query, softParams);
+    broadened = true;
+  }
 
   const mapHit = (h: any) => {
     const title = h.title || h.name || h.product_title || h.heading || String(h.objectID);
@@ -79,22 +119,23 @@ export async function searchProductsPaginated(q: string, opts: SearchOpts = {}) 
 
   const products = (res.hits || []).map(mapHit);
   const total = res.nbHits ?? products.length;
-  const totalPages = res.nbPages ?? Math.ceil(total / pageSize);
-  const hasMore = page + 1 < totalPages;
+  const totalPages = res.nbPages ?? Math.ceil(total / strictParams.hitsPerPage);
+  const hasMore = strictParams.page + 1 < totalPages;
 
   return {
     products,
     facets: res.facets || {},
     pageInfo: {
       total,
-      pageSize,
-      page,
+      pageSize: strictParams.hitsPerPage,
+      page: strictParams.page,
       totalPages,
-      cursor: encodeCursor(page),
-      nextCursor: hasMore ? encodeCursor(page + 1) : null,
-      prevCursor: page > 0 ? encodeCursor(page - 1) : null,
+      cursor: encodeCursor(strictParams.page),
+      nextCursor: hasMore ? encodeCursor(strictParams.page + 1) : null,
+      prevCursor: strictParams.page > 0 ? encodeCursor(strictParams.page - 1) : null,
       hasMore
     },
-    timings: { queryLatencyMs: Date.now() - start, source: 'algolia' as const }
+    timings: { queryLatencyMs: Date.now() - start, source: 'algolia' as const },
+    broadened
   };
 }

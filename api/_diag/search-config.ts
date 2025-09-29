@@ -30,6 +30,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     openai: {
       hasKey: !!process.env.OPENAI_API_KEY
     },
+    facetsExpected: ['relation', 'occasion', 'interest'],
+    supportsFilters: true,
     chatEndpoint: '/api/gifts/chat'
   };
 
