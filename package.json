@@ -26,6 +26,8 @@
     "smoke:chat:local": "curl -s -X POST http://localhost:3000/api/gifts/chat -H 'Content-Type: application/json' -d '{\"query\":\"mug for dad\",\"topK\":8}'",
     "smoke:diag:local": "curl -s http://localhost:3000/api/_diag/search-config",
     "health:algolia:local": "tsx scripts/algolia-health.ts",
+    "ensure:algolia:dry": "tsx scripts/algolia-ensure-settings.ts",
+    "ensure:algolia:apply": "tsx scripts/algolia-ensure-settings.ts --apply",
     "smoke:chat:prod": "node -e \"const u=process.env.PROD_URL||''; if(!u) {console.error('Set PROD_URL'); process.exit(1)}; const {execSync}=require('child_process'); console.log(execSync('curl -s -X POST '+u+'/api/gifts/chat -H \\'Content-Type: application/json\\' -d \\'{\\\\\"query\\\\\":\\\\\"mug for dad\\\\\",\\\\\"topK\\\\\":6,\\\\\"filters\\\\\":{\\\\\"relation\\\\\":[\\\\\"Dad\\\\\"],\\\\\"occasion\\\\\":[\\\\\"Birthday\\\\\"]}}\\'').toString())\"",
     "smoke:diag:prod": "node -e \"const u=process.env.PROD_URL||''; if(!u) {console.error('Set PROD_URL'); process.exit(1)}; const {execSync}=require('child_process'); console.log(execSync('curl -s '+u+'/api/_diag/search-config').toString())\"",
     "smoke:guard:prod": "node -e \"const u=process.env.PROD_URL||''; if(!u){console.error('Set PROD_URL');process.exit(1)}; const {execSync}=require('child_process'); try{ console.log(execSync('curl -s '+u+'/api/_diag/search-config').toString()); } catch(e){ console.error(String(e)); process.exit(2); }\""
