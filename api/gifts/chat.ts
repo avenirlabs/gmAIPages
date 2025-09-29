@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
+import { searchProductsPaginated } from './_services/search';
 
 // Defensive array utility
 const safeArray = <T>(x: T[] | undefined | null): T[] => Array.isArray(x) ? x : [];
@@ -41,128 +42,7 @@ function toUIResponse(input: {
   return { ok: true, reply, products, refineChips, pageInfo, meta };
 }
 
-// Algolia integration (inlined to avoid import issues in serverless)
-interface AlgoliaHit {
-  objectID: string;
-  title?: string;
-  name?: string;
-  product_title?: string;
-  heading?: string;
-  url?: string;
-  permalink?: string;
-  slug?: string;
-  handle?: string;
-  image?: string;
-  images?: string[];
-  thumbnail?: string;
-  _rankingInfo?: { nbExactWords?: number; };
-  [key: string]: any;
-}
-
-interface MappedHit {
-  id: string;
-  title: string;
-  url: string;
-  image?: string;
-  score: number;
-  reason: string;
-  price?: number;
-  currency?: string;
-  description?: string;
-}
-
-interface AlgoliaSearchResult {
-  source: 'algolia' | 'stub';
-  results: MappedHit[];
-}
-
-async function getAlgoliaIndex() {
-  try {
-    const appId = process.env.ALGOLIA_APP_ID;
-    const apiKey = process.env.ALGOLIA_API_KEY;
-    const indexName = process.env.ALGOLIA_INDEX_NAME;
-
-    if (!appId || !apiKey || !indexName) {
-      return null;
-    }
-
-    const mod = await import('algoliasearch');
-    const { algoliasearch } = mod;
-
-    if (typeof algoliasearch !== 'function') {
-      throw new Error(`algoliasearch is not a function, got ${typeof algoliasearch}`);
-    }
-
-    const client = algoliasearch(appId, apiKey);
-    return { client, indexName };
-  } catch (error) {
-    console.error('[algolia]', { msg: 'Failed to initialize', error: (error as Error)?.message });
-    return null;
-  }
-}
-
-function mapHit(hit: AlgoliaHit): MappedHit {
-  const title = hit.title || hit.name || hit.product_title || hit.heading || String(hit.objectID);
-
-  let url: string;
-  if (hit.url) {
-    url = hit.url;
-  } else if (hit.permalink) {
-    url = hit.permalink;
-  } else if (hit.slug) {
-    url = `/products/${hit.slug}`;
-  } else if (hit.handle) {
-    url = `/products/${hit.handle}`;
-  } else {
-    url = `/products/${hit.objectID}`;
-  }
-
-  const image = hit.image || hit.images?.[0] || hit.thumbnail;
-  const score = hit._rankingInfo?.nbExactWords || 1;
-
-  return {
-    id: hit.objectID,
-    title,
-    url,
-    image: image || undefined,
-    score,
-    reason: 'algolia match',
-    price: hit.price ? Number(hit.price) : undefined,
-    currency: hit.currency || 'USD',
-    description: hit.description || title
-  };
-}
-
-async function searchAlgolia(q: string, topK: number = 10): Promise<AlgoliaSearchResult> {
-  try {
-    const algoliaConfig = await getAlgoliaIndex();
-
-    if (!algoliaConfig) {
-      return { source: 'stub', results: [] };
-    }
-
-    const { client, indexName } = algoliaConfig;
-
-    const searchResponse = await client.searchSingleIndex({
-      indexName,
-      searchParams: {
-        query: q,
-        hitsPerPage: topK
-      }
-    });
-
-    const results = safeArray(searchResponse.hits).map((hit: any) => mapHit(hit as AlgoliaHit));
-
-    return {
-      source: 'algolia',
-      results
-    };
-
-  } catch (error) {
-    console.error('[algolia]', { msg: (error as Error)?.message });
-    return { source: 'stub', results: [] };
-  }
-}
+// Chat-specific interfaces
 
 interface ChatRequest {
   query: string;
@@ -426,25 +306,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const query = body.query.trim();
     const topK = body.topK || 10;
+    const cursor = body.cursor || null;
 
     // Build stub results first (existing behavior)
     const stubResults = generateStubResponse(query);
 
-    // Try Algolia search first
-    const algoliaSearch = await searchAlgolia(query, topK);
+    // Try paginated Algolia search first
+    const searchResult = await searchProductsPaginated(query, { topK, cursor });
 
     let responseData: Omit<ChatResponse, 'ok' | 'requestId'>;
     let source: 'algolia' | 'openai' | 'stub' = 'stub';
 
-    if (algoliaSearch.source === 'algolia' && algoliaSearch.results.length > 0) {
+    if (searchResult.timings.source === 'algolia' && searchResult.products.length > 0) {
       // Use Algolia results
       source = 'algolia';
       responseData = {
         source: 'algolia',
         query,
-        reply: `Found ${algoliaSearch.results.length} products matching "${query}". These are real products from our catalog.`,
-        results: algoliaSearch.results,
-        suggestions: stubResults.suggestions // Use stub suggestions as fallback
+        reply: `Found ${searchResult.products.length} products matching "${query}". These are real products from our catalog.`,
+        results: searchResult.products,
+        suggestions: stubResults.suggestions, // Use stub suggestions as fallback
+        pageInfo: searchResult.pageInfo,
+        meta: {
+          queryLatencyMs: searchResult.timings.queryLatencyMs,
+          source: searchResult.timings.source,
+          broadened: false
+        }
       };
     } else if (process.env.OPENAI_API_KEY) {
       // Fall back to OpenAI
@@ -453,17 +340,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         source = responseData.source as 'openai';
       } catch (error) {
         console.error('OpenAI fallback failed:', error);
-        responseData = stubResults;
+        responseData = {
+          ...stubResults,
+          pageInfo: searchResult.pageInfo,
+          meta: {
+            queryLatencyMs: searchResult.timings.queryLatencyMs,
+            source: 'stub',
+            broadened: false
+          }
+        };
         source = 'stub';
       }
     } else {
       // Use stub response
-      responseData = stubResults;
+      responseData = {
+        ...stubResults,
+        pageInfo: searchResult.pageInfo,
+        meta: {
+          queryLatencyMs: searchResult.timings.queryLatencyMs,
+          source: 'stub',
+          broadened: false
+        }
+      };
       source = 'stub';
     }
 
     // Add timing logs
-    console.log('[chat]', { source, q: query, hits: responseData.results.length });
+    console.log('[chat]', { source, q: query, hits: responseData.results?.length || 0 });
 
     const uiPayload = toUIResponse({
       ok: true,
