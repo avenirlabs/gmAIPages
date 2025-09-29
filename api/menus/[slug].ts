@@ -2,20 +2,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getServiceSupabase } from '../_services/supabase.js';
 
-// Fallback minimal menu if DB/static missing (kept tiny on purpose)
-const FALLBACK_NAV = {
-  slug: 'main',
-  items: [
-    { type: 'link', label: 'Home', to: '/' },
-    {
-      type: 'mega',
-      label: 'Shop',
-      columns: [
-        { heading: 'Gifts', links: [{ label: 'For Dad', to: '/gifts/dad' }, { label: 'For Mom', to: '/gifts/mom' }] },
-        { heading: 'Occasions', links: [{ label: 'Birthday', to: '/gifts/birthday' }, { label: 'Anniversary', to: '/gifts/anniversary' }] }
-      ]
-    }
-  ]
+const T = {
+  MENU: process.env.MENU_TBL || 'menus',
+  ITEMS: process.env.MENU_ITEMS_TBL || 'menu_items',
+  COLS: process.env.MENU_COLS_TBL || 'menu_columns',
+  LINKS: process.env.MENU_LINKS_TBL || 'menu_links',
+  SITE: process.env.MENU_SITE_ID_COL || 'site_id',
+  ORD: process.env.MENU_ORDER_COL || 'order_index',
 };
 
 function sendJSON(res: VercelResponse, code: number, body: any) {
@@ -25,57 +18,171 @@ function sendJSON(res: VercelResponse, code: number, body: any) {
   return res.status(code).end(JSON.stringify(body));
 }
 
+function normalizeMenu(raw: any) {
+  // Convert DB shape -> editor shape
+  const items = (raw.items || []).sort((a:any,b:any)=> (a[T.ORD]??0)-(b[T.ORD]??0)).map((it:any)=> {
+    if (it.type === 'mega') {
+      const columns = (it.columns || []).sort((a:any,b:any)=> (a[T.ORD]??0)-(b[T.ORD]??0)).map((c:any)=> ({
+        heading: c.heading ?? c.title ?? '',
+        links: (c.links || []).sort((a:any,b:any)=> (a[T.ORD]??0)-(b[T.ORD]??0)).map((ln:any)=> ({
+          label: ln.label ?? ln.title ?? '',
+          to: ln.to ?? ln.href ?? '#'
+        }))
+      }));
+      return { type: 'mega', label: it.label ?? it.title ?? 'Menu', columns };
+    }
+    // simple link/category
+    return {
+      type: it.type ?? 'link',
+      label: it.label ?? it.title ?? 'Item',
+      to: it.to ?? it.href ?? '#'
+    };
+  });
+  return {
+    slug: raw.slug,
+    title: raw.title ?? raw.name ?? raw.slug,
+    items
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    return sendJSON(res, 405, { ok: false, error: 'Method not allowed' });
-  }
+  const slug = String(req.query.slug || 'main');
+  const supa = getServiceSupabase();
 
-  try {
-    const slug = String(req.query.slug || 'main');
-    const supa = getServiceSupabase();
-
-    // 1) Try Supabase first (if configured)
-    if (supa) {
-      // These table names are guesses based on common naming;
-      // adjust if your actual tables differ.
-      // We try to pull a single menu + nested items + megamenu shape.
-      const { data: menu, error } = await supa
-        .from('menus')
-        .select(`
-          id, slug, title,
-          items:menu_items(
-            id, type, label, to, order_index,
-            // if you have columns/mega parts in another table, join here
-            columns:menu_columns(
-              id, heading,
-              links:menu_links(id, label, to, order_index)
-            )
-          )
-        `)
-        .eq('slug', slug)
-        .maybeSingle();
-
-      if (error) {
-        console.warn('[menus] supabase error', error.message);
-      } else if (menu) {
-        return sendJSON(res, 200, { ok: true, slug, menu });
-      }
-    }
-
-    // 2) Try static JSON at /public/content/menus/{slug}.json
+  if (req.method === 'GET') {
     try {
-      // Dynamic import of JSON can be tricky with bundlers; instead,
-      // attempt to read via fetch against the same deployment host if available.
-      // In serverless without absolute URL, skip to fallback.
-    } catch {
-      // ignore
-    }
+      // DB → fallback strategy
+      if (supa) {
+        // Pull menu + nested graph
+        const { data, error } = await supa
+          .from(T.MENU)
+          .select(`
+            id, slug, title,
+            items:${T.ITEMS}(
+              id, type, label, to, ${T.ORD},
+              columns:${T.COLS}(
+                id, heading, title, ${T.ORD},
+                links:${T.LINKS}(id, label, title, to, href, ${T.ORD})
+              )
+            )
+          `)
+          .eq('slug', slug)
+          .maybeSingle();
 
-    // 3) Final fallback (kept minimal but valid)
-    return sendJSON(res, 200, { ok: true, slug, menu: FALLBACK_NAV });
-  } catch (e: any) {
-    console.error('[menus] handler error', e?.message || e);
-    return sendJSON(res, 500, { ok: false, error: 'Internal error' });
+        if (error) {
+          console.warn('[menu:get] supabase error', error.message);
+        } else if (data) {
+          return sendJSON(res, 200, { ok: true, slug, menu: normalizeMenu(data) });
+        }
+      }
+
+      // Fallback: existing minimal fallback you had earlier
+      return sendJSON(res, 200, {
+        ok: true,
+        slug,
+        menu: {
+          slug: 'main',
+          items: [
+            { type: 'link', label: 'Home', to: '/' },
+            {
+              type: 'mega',
+              label: 'Shop',
+              columns: [
+                { heading: 'Gifts', links: [{ label: 'For Dad', to: '/gifts/dad' }, { label: 'For Mom', to: '/gifts/mom' }] },
+                { heading: 'Occasions', links: [{ label: 'Birthday', to: '/gifts/birthday' }, { label: 'Anniversary', to: '/gifts/anniversary' }] }
+              ]
+            }
+          ]
+        }
+      });
+    } catch (e:any) {
+      console.error('[menu:get] handler error', e?.message || e);
+      return sendJSON(res, 500, { ok: false, error: 'Internal error' });
+    }
   }
+
+  if (req.method === 'POST') {
+    // Save route: upsert menu tree (service role only)
+    if (!supa) {
+      return sendJSON(res, 503, { ok: false, error: 'Supabase not configured' });
+    }
+    try {
+      const body = req.body && typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const menu = body?.menu;
+      if (!menu || !Array.isArray(menu.items)) {
+        return sendJSON(res, 400, { ok: false, error: 'Invalid payload: { menu: { items: [...] } }' });
+      }
+
+      // 1) Ensure menu row exists
+      const { data: menuRow, error: mErr } = await supa
+        .from(T.MENU)
+        .upsert({ slug, title: menu.title ?? slug })
+        .select('id')
+        .single();
+      if (mErr) return sendJSON(res, 500, { ok: false, error: mErr.message });
+      const menuId = menuRow.id;
+
+      // 2) Clear existing items/columns/links (simple approach; transactional if pg functions exist)
+      await supa.from(T.LINKS).delete().in('id', supa.rpc ? [] : []); // no-op placeholder if you don't want to cascade
+      await supa.from(T.COLS).delete().eq('menu_id', menuId); // adjust foreign key names if different
+      await supa.from(T.ITEMS).delete().eq('menu_id', menuId);
+
+      // 3) Insert items with ordering
+      for (let i = 0; i < menu.items.length; i++) {
+        const it = menu.items[i];
+        const { data: insItem, error: iErr } = await supa
+          .from(T.ITEMS)
+          .insert({
+            menu_id: menuId,
+            type: it.type,
+            label: it.label,
+            to: it.to ?? null,
+            [T.ORD]: i
+          })
+          .select('id')
+          .single();
+        if (iErr) return sendJSON(res, 500, { ok: false, error: iErr.message });
+
+        // If mega, insert columns + links
+        if (it.type === 'mega' && Array.isArray(it.columns)) {
+          for (let c = 0; c < it.columns.length; c++) {
+            const col = it.columns[c];
+            const { data: insCol, error: cErr } = await supa
+              .from(T.COLS)
+              .insert({
+                menu_id: menuId,
+                item_id: insItem.id,
+                heading: col.heading,
+                [T.ORD]: c
+              })
+              .select('id')
+              .single();
+            if (cErr) return sendJSON(res, 500, { ok: false, error: cErr.message });
+
+            for (let k = 0; k < (col.links || []).length; k++) {
+              const ln = col.links[k];
+              const { error: lErr } = await supa
+                .from(T.LINKS)
+                .insert({
+                  menu_id: menuId,
+                  column_id: insCol.id,
+                  label: ln.label,
+                  to: ln.to,
+                  [T.ORD]: k
+                });
+              if (lErr) return sendJSON(res, 500, { ok: false, error: lErr.message });
+            }
+          }
+        }
+      }
+
+      return sendJSON(res, 200, { ok: true, slug, saved: true });
+    } catch (e:any) {
+      console.error('[menu:post] save error', e?.message || e);
+      return sendJSON(res, 500, { ok: false, error: 'Save failed' });
+    }
+  }
+
+  res.setHeader('Allow', 'GET, POST');
+  return sendJSON(res, 405, { ok: false, error: 'Method not allowed' });
 }

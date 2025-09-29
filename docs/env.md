@@ -18,6 +18,14 @@
 | PING_MESSAGE | server | optional | /api/ping response override |
 | DISABLE_PII_LOGGING | server | optional | true to strip IP/UA/country/city logging |
 
+# Menu table mapping (server only)
+| MENU_TBL | server | optional | Table name for menus (default: menus) |
+| MENU_ITEMS_TBL | server | optional | Table name for menu items (default: menu_items) |
+| MENU_COLS_TBL | server | optional | Table name for menu columns (default: menu_columns) |
+| MENU_LINKS_TBL | server | optional | Table name for menu links (default: menu_links) |
+| MENU_SITE_ID_COL | server | optional | Site ID column name (default: site_id) |
+| MENU_ORDER_COL | server | optional | Order index column name (default: order_index) |
+
 Notes
 - Client-side env vars must be prefixed with VITE_.
 - Never expose SUPABASE_SERVICE_ROLE, Woo secrets, or OpenAI key to client.
