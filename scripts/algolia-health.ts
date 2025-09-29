@@ -1,7 +1,6 @@
 // scripts/algolia-health.ts
 // Algolia index health check and settings inspection
-// Use the Node build explicitly to avoid dist/browser resolution
-import { algoliasearch } from 'algoliasearch/dist/node';
+import { algoliasearch } from 'algoliasearch';
 
 async function main() {
   try {
@@ -17,13 +16,12 @@ async function main() {
 
     // Connect to Algolia
     const client = algoliasearch(appId, apiKey);
-    const index = client.initIndex(indexName);
 
     // Get index settings
-    const settings = await index.getSettings();
+    const settings = await client.getSettings({ indexName });
 
     // Get sample data (first 3 hits)
-    const searchResult = await index.search('', { hitsPerPage: 3 });
+    const searchResult = await client.searchSingleIndex({ indexName, searchParams: { query: '', hitsPerPage: 3 } });
 
     // Whitelist sample fields
     const sampleData = (searchResult.hits || []).map((hit: any) => {

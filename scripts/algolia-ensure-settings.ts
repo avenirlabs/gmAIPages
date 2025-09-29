@@ -1,7 +1,6 @@
 // scripts/algolia-ensure-settings.ts
 // Ensure Algolia index has proper settings for faceting and search
-// Use the Node build explicitly to avoid dist/browser resolution
-import { algoliasearch } from 'algoliasearch/dist/node';
+import { algoliasearch } from 'algoliasearch';
 
 function uniq<T>(arr: T[]): T[] {
   return [...new Set(arr.filter(Boolean))];
@@ -19,9 +18,8 @@ async function main() {
   }
 
   const client = algoliasearch(appId, adminKey);
-  const index = client.initIndex(indexName);
 
-  const current = await index.getSettings();
+  const current = await client.getSettings({ indexName });
   const curFacets = current.attributesForFaceting ?? [];
   const curSearchable = current.searchableAttributes ?? [];
   const curRanking = current.ranking ?? [];
@@ -64,13 +62,13 @@ async function main() {
   }, null, 2));
 
   if (APPLY && changed) {
-    await index.setSettings(diff);
+    await client.setSettings({ indexName, settings: diff });
     console.log('\nSettings applied. Fetching updated settings...\n');
 
     // Wait a moment for settings to propagate
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const after = await index.getSettings();
+    const after = await client.getSettings({ indexName });
     console.log(JSON.stringify({
       ok: true,
       applied: true,
