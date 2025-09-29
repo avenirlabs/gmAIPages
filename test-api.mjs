@@ -22,7 +22,7 @@ catchall(mockReq2, mockRes2);
 console.log('\n=== Testing /api/gifts/chat (POST with query) ===');
 const mockReq4 = {
   method: 'POST',
-  body: { query: 'gift for dad birthday' }
+  body: { query: 'mug', topK: 6, filters: { relation: ['Dad'], occasion: ['Birthday'] }, soft: false }
 };
 const mockRes4 = {
   status: (code) => ({ json: (data) => console.log(`Status: ${code}, Response:`, JSON.stringify(data, null, 2)) }),
