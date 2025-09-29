@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
-import { searchProductsPaginated } from './_services/search';
+import { searchProductsPaginated } from '../_services/search.ts';
+
+// Production guard: if true, return 503 when Algolia unavailable (no stubs)
+const REQUIRE_ALGOLIA = String(process.env.REQUIRE_ALGOLIA || '').toLowerCase() === 'true';
 
 // Defensive array utility
 const safeArray = <T>(x: T[] | undefined | null): T[] => Array.isArray(x) ? x : [];
@@ -333,6 +336,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           broadened: false
         }
       };
+    } else if (REQUIRE_ALGOLIA) {
+      // No mock data allowed in required mode (prod)
+      console.warn('[chat] algolia required but unavailable; returning 503');
+      const uiPayload = toUIResponse({
+        ok: false,
+        source: 'stub',
+        query,
+        results: [],
+        suggestions: [],
+        reply: 'Search temporarily unavailable',
+        requestId,
+        meta: { reason: 'algolia_missing_or_down' }
+      });
+      return res.status(503).json(uiPayload);
     } else if (process.env.OPENAI_API_KEY) {
       // Fall back to OpenAI
       try {

@@ -16,6 +16,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   // Check environment variables presence (never expose values)
   const config = {
     ok: true,
+    requireAlgolia: String(process.env.REQUIRE_ALGOLIA || '').toLowerCase() === 'true',
     algolia: {
       hasAppId: !!process.env.ALGOLIA_APP_ID,
       hasApiKey: !!process.env.ALGOLIA_API_KEY,

@@ -9,6 +9,9 @@ Configure these environment variables in Vercel Dashboard → Project → Settin
 - `ALGOLIA_API_KEY` - Search-Only API Key (never use Admin key)
 - `ALGOLIA_INDEX_NAME` - Name of your products index (e.g., `gmProducts`)
 
+### No Mock in Production
+- `REQUIRE_ALGOLIA=true` (Production) - Forces 503 when Algolia unavailable (no stubs)
+
 ### Optional Enhancements
 - `OPENAI_API_KEY` - For AI-enhanced responses (falls back to stub if missing)
 - `SUPABASE_URL` - For CMS functionality
