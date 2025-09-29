@@ -26,6 +26,21 @@
 | MENU_SITE_ID_COL | server | optional | Site ID column name (default: site_id) |
 | MENU_ORDER_COL | server | optional | Order index column name (default: order_index) |
 
+# Analytics table mapping (server only)
+| ANALYTICS_EVENTS_TBL | server | optional | Analytics events table (default: analytics_events) |
+| PRODUCTS_TBL | server | optional | Products table for metadata lookup (default: products) |
+| TS_COL | server | optional | Timestamp column name (default: ts) |
+| KIND_COL | server | optional | Event kind/type column (default: kind) |
+| QUERY_COL | server | optional | Search query column (default: query) |
+| PRODUCT_ID_COL | server | optional | Product ID column (default: product_id) |
+| COUNTRY_COL | server | optional | Country column name (default: country) |
+| CITY_COL | server | optional | City column name (default: city) |
+| CHIP_COL | server | optional | Filter chip column (default: chip) |
+| FILTER_KEY_COL | server | optional | Filter key column (default: filter_key) |
+| FILTER_VALUE_COL | server | optional | Filter value column (default: filter_value) |
+| DEPTH_COL | server | optional | Session depth column (default: depth) |
+| QUALITY_COL | server | optional | Quality score column (default: quality) |
+
 Notes
 - Client-side env vars must be prefixed with VITE_.
 - Never expose SUPABASE_SERVICE_ROLE, Woo secrets, or OpenAI key to client.
