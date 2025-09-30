@@ -2816,6 +2816,284 @@ proper RLS error handling and type-aware validation.
 
 ---
 
+#### Task #MM-005: Allow Root-Level Links
+**Type**: Bug Fix / Feature Enhancement
+**Status**: ✅ Completed
+**Branch**: fix/menu-root-links-trigger
+**Duration**: ~1 hour
+
+**Objective**: Fix navigation hierarchy validation to allow Links at root level (no parent), replacing invalid CHECK constraints with proper trigger validation, and updating the admin UI to support the "No parent (top nav)" option.
+
+**Problem Statement**:
+The original implementation incorrectly prevented Links from being root-level items. The CHECK constraints attempted to validate parent types using row lookups, which doesn't work reliably in PostgreSQL CHECK constraints (they can't reference other rows). This needed to be replaced with a trigger-based validator.
+
+**Requirements Delivered**:
+1. **Database Migration**: New trigger validation replacing invalid CHECK constraints
+2. **Admin UI Update**: "No parent (top nav)" option for Links
+3. **Updated Validation**: Links can be root-level or nested
+4. **Documentation**: Complete rules reference guide
+
+**Database Changes** (`sql/migrations/2025-09-30_menu_root_links.sql`):
+
+**Removed Invalid Constraints**:
+```sql
+-- These don't work reliably (can't reference other rows in CHECK)
+ALTER TABLE navigation_items DROP CONSTRAINT IF EXISTS chk_parent_type_for_group;
+ALTER TABLE navigation_items DROP CONSTRAINT IF EXISTS chk_parent_type_for_link;
+```
+
+**Updated Trigger Function**:
+```sql
+CREATE OR REPLACE FUNCTION validate_navigation_hierarchy()
+RETURNS trigger AS $$
+BEGIN
+    -- Rule 1: Columns must be root (parent_id = NULL)
+    IF NEW.type = 'column' AND NEW.parent_id IS NOT NULL THEN
+        RAISE EXCEPTION 'Columns must be root-level items (no parent)';
+    END IF;
+
+    -- Rule 2: Groups must have Column parent (parent_id required)
+    IF NEW.type = 'group' THEN
+        IF NEW.parent_id IS NULL THEN
+            RAISE EXCEPTION 'Groups must have a parent Column';
+        END IF;
+        -- Check parent type is 'column'
+        IF NOT EXISTS (
+            SELECT 1 FROM navigation_items
+            WHERE id = NEW.parent_id AND type = 'column'
+        ) THEN
+            RAISE EXCEPTION 'Groups must have a parent of type Column';
+        END IF;
+    END IF;
+
+    -- Rule 3: Links can be root OR nested (parent_id optional)
+    --         If parent set, must be Column or Group
+    IF NEW.type = 'link' AND NEW.parent_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM navigation_items
+            WHERE id = NEW.parent_id AND type IN ('column', 'group')
+        ) THEN
+            RAISE EXCEPTION 'Links must have parent of type Column or Group';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+**UI Changes**:
+
+**1. ParentSelector Component** (`client/components/admin/menu/ParentSelector.tsx`):
+- **Added**: "No parent (top nav)" option for Links (value: `''` → `null`)
+- **Updated**: Help text to reflect optional parent for Links
+- **Fixed**: Dropdown no longer disabled when no parents exist (Links can be root)
+
+**Before**:
+```typescript
+// Error: Links required parent
+if (currentType === 'link' && !value) {
+  error = 'Links must have a Column or Group parent';
+}
+```
+
+**After**:
+```typescript
+// Links can have no parent (root-level)
+{currentType === 'link' && (
+  <SelectItem value="">
+    <span>No parent (top nav)</span>
+  </SelectItem>
+)}
+```
+
+**2. AdminMenuForm Component** (`client/components/admin/menu/AdminMenuForm.tsx`):
+- **Changed**: Default type from `'link'` to `'column'`
+- **Removed**: Parent validation for Links (now optional)
+- **Added**: Normalize empty string `''` to `null` for parent_id before save
+- **Updated**: Error messages to match new rules
+
+**Validation Changes**:
+
+**Before**:
+```typescript
+if (formData.type === 'link' && !formData.parent_id) {
+  newErrors.parent_id = 'Links must have a Column or Group parent';
+}
+```
+
+**After**:
+```typescript
+if (formData.type === 'link') {
+  // Parent optional (can be root-level)
+  // Only validate href is present
+  if (!formData.href?.trim()) {
+    newErrors.href = 'URL is required for links';
+  }
+}
+```
+
+**Save Handler**:
+```typescript
+// Normalize empty string to null before persisting
+const normalizedParentId = formData.parent_id === '' ? null : formData.parent_id;
+
+const dbData = {
+  type: formData.type,
+  label: formData.label,
+  parent_id: normalizedParentId,  // Properly handle root-level
+  // ...
+};
+```
+
+**New Hierarchy Rules**:
+
+| Type | Parent Required? | Valid Parent Types | Can Be Root? |
+|------|-----------------|-------------------|--------------|
+| **Column** | ❌ No | None (always root) | ✅ Yes (always) |
+| **Group** | ✅ Yes | Column only | ❌ No |
+| **Link** | ❌ No | Column, Group, or none | ✅ Yes (optional) |
+
+**Use Cases Enabled**:
+
+**1. Root-Level Navigation Links**:
+```
+Link: Home (/) [root]
+Link: About (/about) [root]
+Link: Contact (/contact) [root]
+```
+
+**2. Mixed Root + Nested**:
+```
+Link: Home (/) [root]
+
+Column: Products
+├── Link: All Products (/products)
+└── Link: Sale (/products/sale)
+
+Link: Contact (/contact) [root]
+```
+
+**3. Full Hierarchy**:
+```
+Column: Products
+├── Group: Electronics
+│   └── Link: Smartphones (/products/smartphones)
+└── Link: All Products (/products)
+
+Link: Home (/) [root]
+```
+
+**Documentation Created** (`docs/admin/menu_rules.md`):
+- **Quick Reference Table**: Type rules and constraints
+- **Detailed Rules**: Each type explained
+- **Hierarchy Patterns**: Common navigation structures
+- **Admin Form Behavior**: UI behavior per type
+- **Validation Matrix**: Client vs database validation
+- **Error Messages**: Complete reference
+- **Common Scenarios**: Step-by-step workflows
+- **Migration Notes**: Upgrading existing menus
+
+**Files Created**:
+- `sql/migrations/2025-09-30_menu_root_links.sql` (73 lines) - Database migration
+- `docs/admin/menu_rules.md` (450+ lines) - Complete rules reference
+
+**Files Modified**:
+- `client/components/admin/menu/ParentSelector.tsx` - Added "No parent" option
+- `client/components/admin/menu/AdminMenuForm.tsx` - Updated validation and defaults
+- `docs/task_board.md` - Added Task #MM-005
+
+**Testing Steps**:
+
+**Test 1: Create Root-Level Link**:
+```
+1. Open /admin/menu
+2. Click "New Item"
+3. Type: Link
+4. Label: "Home"
+5. Parent: "No parent (top nav)"
+6. href: "/"
+7. Save
+Result: ✅ Link created with parent_id = NULL
+```
+
+**Test 2: Create Nested Link**:
+```
+1. Create Column "Products"
+2. Create Link under Products
+3. Label: "All Products"
+4. Parent: "Products"
+5. href: "/products"
+6. Save
+Result: ✅ Link created with parent_id pointing to Column
+```
+
+**Test 3: Move Link to Root**:
+```
+1. Edit existing nested link
+2. Parent: Select "No parent (top nav)"
+3. Save
+Result: ✅ parent_id changes to NULL
+```
+
+**Test 4: Group Without Parent (Should Fail)**:
+```
+1. Create Group
+2. Parent: Leave empty or "No parent"
+3. Save
+Result: ✅ Error: "Groups must be under a Column"
+```
+
+**Test 5: Column With Parent (Should Fail)**:
+```
+1. Create Column
+2. Try to set parent (field should be disabled)
+Result: ✅ Parent field disabled, always NULL
+```
+
+**Backward Compatibility**:
+- ✅ Existing Columns unchanged (already root)
+- ✅ Existing Groups unchanged (already under Columns)
+- ✅ Existing Links unchanged (already nested)
+- ✅ New capability: Links can now be root-level
+- ✅ No data migration required
+
+**API Impact**:
+- `GET /api/menu`: Will now include root-level Links at top level
+- Response structure remains backward compatible
+- Root links appear as items with `parent_id: null`
+
+**Git Commit**:
+```
+fix(menu): allow root-level links; replace bad CHECK with trigger validation; update admin form
+
+- Create SQL migration to replace invalid CHECK constraints
+- Update trigger function to allow Links with parent_id = NULL
+- Add "No parent (top nav)" option to ParentSelector for Links
+- Update AdminMenuForm validation to remove parent requirement for Links
+- Change default form type from 'link' to 'column'
+- Normalize empty string to null for parent_id before saving
+- Create comprehensive menu_rules.md documentation
+- Update task_board.md with Task #MM-005
+
+Database Changes:
+- Drop invalid CHECK constraints (can't reference other rows)
+- Update validate_navigation_hierarchy() trigger function
+- Add comments documenting new rules
+
+UI Changes:
+- ParentSelector: Add root option for Links, update help text
+- AdminMenuForm: Remove Link parent validation, normalize '' to null
+- Default form type now 'column' instead of 'link'
+
+Testing: All hierarchy rules enforced correctly. Links can be created
+at root level, Groups still require Column parent, Columns still root-only.
+```
+
+**Outcome**: Successfully fixed navigation hierarchy validation to support root-level Links while maintaining strict validation for Columns (root-only) and Groups (Column-parent required). Replaced unreliable CHECK constraints with proper trigger-based validation. Updated admin UI to provide intuitive "No parent (top nav)" option for Links with proper normalization of empty values to NULL. Complete documentation ensures developers understand the rules and can use the system correctly.
+
+---
+
 ## Task Categories
 
 - **Analysis**: Code reviews, architecture analysis, dependency audits

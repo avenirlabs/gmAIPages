@@ -84,24 +84,38 @@ export function ParentSelector({
     );
   }
 
-  const isDisabled = disabled || loading || options.length === 0;
+  // For links, allow "No parent" option; for groups, parent is required
+  const isDisabled = disabled || loading;
 
   return (
     <div className="space-y-2">
       <Select
         value={value || ''}
-        onValueChange={(val) => onChange(val || null)}
+        onValueChange={(val) => onChange(val === '' ? null : val)}
         disabled={isDisabled}
       >
         <SelectTrigger>
           <SelectValue placeholder={loading ? "Loading..." : "Select parent"} />
         </SelectTrigger>
         <SelectContent>
-          {options.length === 0 && !loading && (
-            <SelectItem value="none" disabled>
-              No valid parents found
+          {/* For links only: add "No parent (top nav)" option */}
+          {currentType === 'link' && (
+            <SelectItem value="">
+              <span className="flex items-center gap-2">
+                <span className="text-xs font-mono text-muted-foreground">
+                  root
+                </span>
+                <span>No parent (top nav)</span>
+              </span>
             </SelectItem>
           )}
+
+          {options.length === 0 && !loading && currentType === 'group' && (
+            <SelectItem value="none" disabled>
+              No valid parents found (create a Column first)
+            </SelectItem>
+          )}
+
           {options.map((option) => (
             <SelectItem key={option.id} value={option.id}>
               <span className="flex items-center gap-2">
@@ -116,12 +130,12 @@ export function ParentSelector({
       </Select>
       {currentType === 'group' && (
         <p className="text-xs text-muted-foreground">
-          Groups must have a Column parent
+          Groups must have a Column parent (required)
         </p>
       )}
       {currentType === 'link' && (
         <p className="text-xs text-muted-foreground">
-          Links must have a Column or Group parent
+          Links can be root-level (top nav) or nested under Column/Group
         </p>
       )}
     </div>

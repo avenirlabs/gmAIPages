@@ -38,7 +38,7 @@ export function AdminMenuForm({ open, onOpenChange, item, onSuccess }: AdminMenu
 
   // Form state
   const [formData, setFormData] = useState<NavigationItemFormData>({
-    type: 'link',
+    type: 'column',
     label: '',
     parent_id: null,
     order: 0,
@@ -74,7 +74,7 @@ export function AdminMenuForm({ open, onOpenChange, item, onSuccess }: AdminMenu
     } else {
       // Reset for new item
       setFormData({
-        type: 'link',
+        type: 'column',
         label: '',
         parent_id: null,
         order: 0,
@@ -101,15 +101,13 @@ export function AdminMenuForm({ open, onOpenChange, item, onSuccess }: AdminMenu
 
     // Type-specific validation
     if (formData.type === 'group' && !formData.parent_id) {
-      newErrors.parent_id = 'Groups must have a Column parent';
+      newErrors.parent_id = 'Groups must be under a Column';
     }
 
     if (formData.type === 'link') {
-      if (!formData.parent_id) {
-        newErrors.parent_id = 'Links must have a Column or Group parent';
-      }
+      // Links can have no parent (root-level), so parent_id is optional
       if (!formData.href?.trim()) {
-        newErrors.href = 'Link URL (href) is required for link items';
+        newErrors.href = 'URL is required for links';
       } else {
         // Validate href safety
         const href = formData.href.toLowerCase();
@@ -144,10 +142,13 @@ export function AdminMenuForm({ open, onOpenChange, item, onSuccess }: AdminMenu
 
     try {
       // Prepare data for database
+      // Normalize empty string parent_id to null
+      const normalizedParentId = formData.parent_id === '' ? null : formData.parent_id;
+
       const dbData: any = {
         type: formData.type,
         label: formData.label,
-        parent_id: formData.parent_id,
+        parent_id: normalizedParentId,
         order: formData.order,
         hidden_on: formData.hidden_on,
         is_active: formData.is_active,
