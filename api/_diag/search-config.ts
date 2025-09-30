@@ -1,8 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { applyCors, handlePreflight } from '../_services/cors.js';
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  // Set headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (handlePreflight(req, res)) return;
+  applyCors(req, res);
+
   res.setHeader('Cache-Control', 'no-store');
 
   // Only allow GET requests

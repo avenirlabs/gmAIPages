@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import styles from "./styles.css?inline";
-import { ChatInterface } from "@/components/gifts/ChatInterface";
+import Chat from "@/components/gifts/ChatEmbed";
 
 // Create a single query client for the widget
 const queryClient = new QueryClient({
@@ -91,7 +91,16 @@ class GiftsmateChat extends HTMLElement {
       <React.StrictMode>
         <QueryClientProvider client={queryClient}>
           <div style={{ all: "initial", display: "block", fontFamily: "system-ui, sans-serif" }}>
-            <ChatInterface starterPrompts={starterPrompts} />
+            <Chat
+              starterPrompts={starterPrompts}
+              apiBase={p.apiBase}
+              theme={p.theme as any}
+              color={p.color}
+              radius={p.radius ? Number(p.radius) : undefined}
+              welcome={p.welcome}
+              initial={p.initial}
+              userId={p.userId}
+            />
           </div>
         </QueryClientProvider>
       </React.StrictMode>

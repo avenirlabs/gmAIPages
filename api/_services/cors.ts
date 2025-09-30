@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const ALLOWED = new Set([
+const ALLOWED = new Set<string>([
   "https://giftsmate.net",
   "https://www.giftsmate.net",
   "https://theyayacafe.com",
@@ -8,7 +8,7 @@ const ALLOWED = new Set([
 ]);
 
 export function applyCors(req: VercelRequest, res: VercelResponse) {
-  const origin = req.headers.origin as string | undefined;
+  const origin = (req.headers.origin as string | undefined) || "";
   if (origin && ALLOWED.has(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Vary", "Origin");
