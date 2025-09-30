@@ -26,7 +26,7 @@ export default defineConfig({
         },
       },
     },
-    outDir: "dist",
+    outDir: "dist/spa",
     emptyOutDir: false,
   },
 });
