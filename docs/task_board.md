@@ -276,6 +276,52 @@ An AI-powered gift recommendation platform that allows users to chat naturally a
 
 **Outcome**: Complete localization to Indian Rupee currency across the entire application. All product prices and budget suggestions now display in INR, providing a consistent user experience for the Indian market.
 
+### 2025-09-30
+
+#### Task #MM-001: Admin Menu Schema
+**Type**: Database Schema
+**Status**: ✅ Completed
+**Performed by**: Claude Code AI Assistant
+**Duration**: ~30 minutes
+
+**Objective**: Create a comprehensive admin menu database schema in Supabase with hierarchical navigation support, proper constraints, RLS policies, and admin access controls.
+
+**Key Decisions**:
+1. **Three-tier hierarchy**: column → group → link structure for flexible menu organization
+2. **Type-based constraints**: Different field access based on menu item type (link-only href/icons)
+3. **Security-first RLS**: Anonymous users see only active items, admin-only write access
+4. **Validation triggers**: Real-time parent-child type relationship enforcement
+5. **Safe URL checking**: Prevents javascript: and data: URL injection attacks
+
+**Implementation Details**:
+- **Enum Type**: `menu_item_type` with values ('column', 'group', 'link')
+- **Main Table**: `public.navigation_items` with 15 columns including hierarchy, display, and metadata fields
+- **Admin Table**: `public.admin_users` for email-based admin authentication
+- **Indexes**: 3 strategic indexes for parent relationships and ordering performance
+- **Constraints**: 5 check constraints enforcing hierarchy rules and security
+- **Triggers**: Hierarchy validation and automatic timestamp updates
+- **RLS Policies**: 8 policies for public read access and admin-only write operations
+- **Helper Function**: `public.is_admin()` for JWT-based authorization
+- **Public View**: `navigation_items_public` for safe external access
+
+**Files Created**:
+- `/sql/migrations/2025-09-30_admin_menu.sql` - Complete migration script
+- `/docs/admin/menu_schema.md` - Field glossary and usage documentation
+
+**Verification Steps**:
+1. Migration runs cleanly without errors
+2. RLS policies enforce proper access controls (anonymous read-only, admin write)
+3. Check constraints prevent invalid hierarchies and unsafe URLs
+4. Indexes optimize common query patterns
+5. Triggers maintain data integrity and timestamps
+
+**Next Steps**:
+- Add first admin email: `INSERT INTO public.admin_users(email) VALUES ('<admin-email>');`
+- Implement API endpoints to consume the schema
+- Create admin UI for menu management
+
+**Outcome**: Production-ready admin menu schema with robust security, validation, and hierarchical organization capabilities.
+
 #### Task #006: Admin Product Indexing Service
 **Type**: Feature Implementation
 **Status**: ✅ Completed
