@@ -15,9 +15,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && vite build -c vite.widget.config.ts",
     "preview": "vite preview",
-    "vercel-build": "vite build",
+    "vercel-build": "vite build && vite build -c vite.widget.config.ts",
     "build:content": "node --env-file=.env scripts/generate-static-content.mjs",
     "test": "vitest --run",
     "format.fix": "prettier --write .",
@@ -119,4 +119,5 @@
     "vitest": "^3.2.4",
     "@vercel/node": "^3.0.12"
   }
+
 }

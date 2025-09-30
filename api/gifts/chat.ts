@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'crypto';
 import { searchProductsPaginated } from '../_services/search.js';
 import { buildRefineChips } from '../_services/chips.js';
+import { handlePreflight, applyCors } from '../_services/cors.js';
 
 // Production guard: if true, return 503 when Algolia unavailable (no stubs)
 const REQUIRE_ALGOLIA = String(process.env.REQUIRE_ALGOLIA || '').toLowerCase() === 'true';
@@ -280,14 +281,8 @@ async function getOpenAIResponse(query: string) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
+  if (handlePreflight(req, res)) return;
+  applyCors(req, res);
 
   if (req.method !== 'POST') {
     const uiPayload = toUIResponse({

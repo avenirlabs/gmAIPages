@@ -1,0 +1,17 @@
+:host {
+  all: initial;
+  display: block;
+  box-sizing: border-box;
+}
+
+#gm-root {
+  display: block;
+  min-height: 420px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Reset for shadow DOM content */
+#gm-root * {
+  box-sizing: border-box;
+}

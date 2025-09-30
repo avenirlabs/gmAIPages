@@ -25,9 +25,15 @@ interface Turn {
 
 export function ChatInterface({
   starterPrompts,
+  apiBase,
 }: {
   starterPrompts?: string[];
+  apiBase?: string;
 }) {
+  // URL helper for API calls
+  const base = apiBase || window.location.origin;
+  const url = (path: string) => base.replace(/\/$/, "") + path;
+
   const [turns, setTurns] = useState<Turn[]>([
     {
       role: "assistant",
@@ -103,7 +109,7 @@ export function ChatInterface({
           soft: false
         };
 
-        const res = await fetch("/api/gifts/chat", {
+        const res = await fetch(url("/api/gifts/chat"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestBody),
