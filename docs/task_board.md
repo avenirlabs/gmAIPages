@@ -2498,6 +2498,324 @@ Acceptance Criteria Met:
 
 ---
 
+#### Task #MM-004: Admin Menu Editor (v1)
+**Type**: Feature
+**Status**: ✅ Completed
+**Branch**: feat/menu-api (same branch as MM-003)
+**Duration**: ~2 hours
+
+**Objective**: Build a production-ready admin UI for CRUD operations on the `navigation_items` table with type-aware validation, hierarchy guardrails, and real Supabase integration.
+
+**Requirements Delivered**:
+1. **Full CRUD Interface**: Create, read, update, and delete menu items
+2. **Type-Aware Validation**: Enforces database constraints in the UI
+3. **Hierarchy Guardrails**: Prevents invalid parent-child relationships
+4. **Real Supabase Integration**: No mocks or stubs, direct database operations
+5. **Comprehensive Error Handling**: User-friendly messages for RLS violations
+
+**Component Architecture**:
+
+**Core Page** (`client/pages/admin/MenuAdmin.tsx`):
+- **List View**: Paginated table with filtering and search
+- **Type Filters**: Chips to filter by column/group/link
+- **Search**: Real-time label search
+- **Stats Display**: Total items and filtered count
+- **Help Section**: Links to documentation
+- **Integrated Dialogs**: Create/edit form and delete confirmation
+
+**Supporting Components**:
+
+1. **AdminMenuTable** (`client/components/admin/menu/AdminMenuTable.tsx`):
+   - Displays menu items in responsive table
+   - Shows: Type, Label, Parent, Order, Hidden On, Link Details, Status, Actions
+   - Color-coded type badges
+   - Visual indicators for external links, icons, badges
+   - Active/Inactive status with eye icons
+   - Edit and Delete action buttons
+
+2. **AdminMenuForm** (`client/components/admin/menu/AdminMenuForm.tsx`):
+   - Modal dialog for create/edit operations
+   - **Common Fields**: type, label, parent_id, order, hidden_on, is_active
+   - **Link-Only Fields**: href, icon, badge_text, external, open_new_tab, tracking_tag
+   - **Type-Aware UI**: Shows/hides fields based on item type
+   - **Real-Time Validation**:
+     - Label required
+     - Group must have Column parent
+     - Link must have Column or Group parent
+     - Link must have href (non-empty)
+     - javascript: and data: URLs rejected
+     - Order must be numeric
+   - **RLS Error Handling**: Detects permission errors and shows helpful message
+
+3. **ParentSelector** (`client/components/admin/menu/ParentSelector.tsx`):
+   - Async select component loading valid parents from Supabase
+   - **Type-Aware Filtering**:
+     - Groups: Only shows Columns as options
+     - Links: Shows Columns and Groups as options
+     - Columns: Shows info message (no parent allowed)
+   - **Self-Exclusion**: Excludes current item when editing (prevents circular refs)
+   - Displays parent type alongside label for clarity
+
+4. **AdminTypeChips** (`client/components/admin/menu/AdminTypeChips.tsx`):
+   - Filter buttons: All, Columns, Groups, Links
+   - Active state styling
+   - Client-side filtering
+
+**Type Definitions** (`client/types/menu.ts`):
+- `NavigationItem`: Complete DB row type
+- `NavigationItemFormData`: Form-specific type with optional fields
+- `ParentOption`: Selector option type
+- `MenuItemType`: 'column' | 'group' | 'link'
+
+**Validation Rules Enforced**:
+
+**Database Constraints Mirrored in UI**:
+```typescript
+// Column type
+- parent_id: null (enforced, disabled in UI)
+- link fields: all null/false (hidden in form)
+
+// Group type
+- parent_id: required, must point to Column
+- link fields: all null/false (hidden in form)
+
+// Link type
+- parent_id: required, must point to Column or Group
+- href: required, non-empty
+- href: no javascript: or data: URLs
+- icon, badge_text, tracking_tag: optional strings
+- external, open_new_tab: boolean flags
+```
+
+**User Experience Features**:
+
+**Error Messages**:
+```typescript
+// RLS/Permission Error
+"You're signed in but don't have permission to edit menu items.
+Ask an admin to add your email to admin_users."
+
+// Validation Errors
+"Label is required"
+"Groups must have a Column parent"
+"Links must have a Column or Group parent"
+"Link URL (href) is required for link items"
+"javascript: and data: URLs are not allowed for security"
+"Order must be a number"
+```
+
+**Success Toasts**:
+- "Item Created: Successfully created \"{label}\""
+- "Item Updated: Successfully updated \"{label}\""
+- "Item Deleted: Successfully deleted \"{label}\""
+
+**Delete Confirmation**:
+- Warning dialog: "This will remove {label} and all its children (if any)"
+- Cascade delete handled by database foreign key
+
+**UI Layout**:
+
+**Header Section**:
+- Title: "Menu Administration"
+- Description: "Manage navigation menu items, hierarchy, and settings"
+- Back to Admin button
+
+**Controls Row**:
+- Type filter chips (All/Columns/Groups/Links)
+- "New Item" button with plus icon
+- Search input with search icon
+- Stats: "Total: X • Showing: Y"
+
+**Table Columns**:
+1. **Type**: Badge (color-coded)
+2. **Label**: Item name
+3. **Parent**: Parent label or "—"
+4. **Order**: Numeric sort position
+5. **Hidden On**: Platform badges (mobile/desktop)
+6. **Link Details**: href with external icon, icon/badge badges, "new tab" indicator
+7. **Status**: Active (eye) / Inactive (eye-off)
+8. **Actions**: Edit (pencil) and Delete (trash) buttons
+
+**Footer Help**:
+- Link to `/docs/admin/menu_schema.md` for field definitions
+- Link to `/docs/admin/menu_editor.md` for usage instructions
+
+**Integration with Existing Admin**:
+- Added "Menu (New)" tab to Admin dashboard
+- Tab shows redirect message and button to `/admin/menu`
+- Standalone page at `/admin/menu` route
+- Uses existing Supabase auth (session required)
+
+**Files Created**:
+- `client/types/menu.ts` (43 lines) - TypeScript type definitions
+- `client/components/admin/menu/AdminTypeChips.tsx` (35 lines) - Filter chips
+- `client/components/admin/menu/ParentSelector.tsx` (117 lines) - Smart parent picker
+- `client/components/admin/menu/AdminMenuForm.tsx` (435 lines) - Create/edit modal
+- `client/components/admin/menu/AdminMenuTable.tsx` (145 lines) - Data table
+- `client/pages/admin/MenuAdmin.tsx` (230 lines) - Main page
+
+**Files Modified**:
+- `client/App.tsx` - Added `/admin/menu` route
+- `client/pages/Admin.tsx` - Added "Menu (New)" tab
+
+**Supabase Operations**:
+
+**Read Operations**:
+```typescript
+// Load all items
+supabase.from('navigation_items').select('*')
+  .order('parent_id', { ascending: true, nullsFirst: true })
+  .order('order', { ascending: true });
+
+// Load valid parents for selector
+supabase.from('navigation_items').select('id, type, label')
+  .in('type', validTypes)
+  .eq('is_active', true)
+  .neq('id', currentItemId) // exclude self
+  .order('order', { ascending: true });
+```
+
+**Write Operations**:
+```typescript
+// Create
+supabase.from('navigation_items').insert(data);
+
+// Update
+supabase.from('navigation_items').update(data).eq('id', itemId);
+
+// Delete
+supabase.from('navigation_items').delete().eq('id', itemId);
+```
+
+**Security Considerations**:
+
+**RLS Enforcement**:
+- All queries use anon key (VITE_SUPABASE_ANON_KEY)
+- RLS policies enforce admin_users check for INSERT/UPDATE/DELETE
+- SELECT allowed for is_active=true (public read)
+- UI gracefully handles 401/403 errors with helpful messages
+
+**Client-Side Validation**:
+- Mirrors database constraints to prevent invalid submissions
+- URL validation prevents XSS via javascript: and data: URLs
+- hidden_on array validated against ['mobile', 'desktop']
+
+**Known Limitations (v1)**:
+
+1. **No Drag & Drop**: Items sorted by 'order' field, manual number entry
+2. **No Bulk Operations**: Edit/delete one at a time
+3. **No Preview**: No live preview of menu structure
+4. **No Undo**: Delete is permanent (database cascade)
+5. **No Import/Export**: No JSON import/export functionality
+6. **Basic Search**: Client-side only, no fuzzy search
+7. **No Pagination**: Loads all items (fine for <1000 items)
+
+**Testing Results**:
+
+**CRUD Operations**:
+- ✅ Create Column: Works, parent_id forced to null
+- ✅ Create Group: Requires Column parent, enforced
+- ✅ Create Link: Requires href and Column/Group parent
+- ✅ Edit Item: Pre-fills form, updates correctly
+- ✅ Delete Item: Shows confirmation, cascades to children
+- ✅ Type Change: Updates available parents dynamically
+
+**Validation**:
+- ✅ Empty label rejected
+- ✅ javascript: URL rejected
+- ✅ data: URL rejected
+- ✅ Missing parent for Group rejected
+- ✅ Missing href for Link rejected
+- ✅ Invalid order (non-numeric) rejected
+
+**Permission Handling**:
+- ✅ Non-admin sees helpful RLS error message
+- ✅ UI remains functional (read-only) without admin access
+- ✅ All errors surfaced with toast notifications
+
+**Type-Aware Rules**:
+- ✅ Column: Parent selector disabled, shows info message
+- ✅ Group: Only Columns shown in parent selector
+- ✅ Link: Columns and Groups shown in parent selector
+- ✅ Link fields hidden for Column and Group types
+- ✅ Parent selector excludes self when editing
+
+**Future Enhancements (v2)**:
+
+**Drag & Drop Ordering**:
+- React DnD or dnd-kit for visual reordering
+- Batch update order fields on drop
+
+**Bulk Operations**:
+- Multi-select with checkboxes
+- Bulk delete, bulk hide/show, bulk active/inactive
+
+**Live Preview**:
+- Side-by-side preview pane showing rendered menu
+- Real-time updates as items are edited
+
+**Import/Export**:
+- JSON export for backup/migration
+- JSON import with validation
+- CSV export for spreadsheet editing
+
+**Advanced Search & Filtering**:
+- Fuzzy search across label and href
+- Filter by parent, active status, hidden_on
+- Search within nested hierarchy
+
+**Audit Trail**:
+- Show updated_by and updated_at in table
+- History log of changes with timestamps
+
+**Undo/Redo**:
+- Temporary undo stack for recent changes
+- "Restore from backup" functionality
+
+**Git Commit Message**:
+```
+feat(admin): add simple Admin Menu Editor (table + forms) with type-aware rules
+
+- Create MenuAdmin page at /admin/menu with full CRUD
+- Add AdminMenuTable component with type badges and link details
+- Implement AdminMenuForm with type-aware validation
+- Create ParentSelector with dynamic filtering by type
+- Add AdminTypeChips for filtering by column/group/link
+- Define TypeScript types in client/types/menu.ts
+- Enforce hierarchy rules: groups→columns, links→columns/groups
+- Validate javascript: and data: URL rejection
+- Handle RLS permission errors with helpful messages
+- Integrate with existing Admin dashboard via new tab
+- Add route /admin/menu in App.tsx
+
+Validation Rules:
+- Label required
+- Group must have Column parent
+- Link must have Column or Group parent
+- Link must have valid href (no js: or data:)
+- Order must be numeric
+- hidden_on limited to mobile/desktop
+
+Files Created:
+- client/types/menu.ts
+- client/components/admin/menu/AdminTypeChips.tsx
+- client/components/admin/menu/ParentSelector.tsx
+- client/components/admin/menu/AdminMenuForm.tsx
+- client/components/admin/menu/AdminMenuTable.tsx
+- client/pages/admin/MenuAdmin.tsx
+
+Files Modified:
+- client/App.tsx (added /admin/menu route)
+- client/pages/Admin.tsx (added Menu tab)
+
+Testing: All CRUD operations work against real Supabase with
+proper RLS error handling and type-aware validation.
+```
+
+**Outcome**: Successfully implemented a production-ready admin menu editor with comprehensive CRUD functionality, intelligent type-aware validation, and seamless Supabase integration. The UI enforces all database constraints client-side, provides helpful error messages for permission issues, and maintains data integrity through hierarchy guardrails. The system is immediately usable for managing navigation_items with no backend changes required.
+
+---
+
 ## Task Categories
 
 - **Analysis**: Code reviews, architecture analysis, dependency audits

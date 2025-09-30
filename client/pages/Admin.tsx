@@ -40,7 +40,7 @@ export default function Admin() {
   const [chipDraft, setChipDraft] = useState("");
   const [navLinks, setNavLinks] = useState<NavLinkRow[]>([]);
   const [navLoading, setNavLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"pages" | "navigation" | "analytics">("pages");
+  const [activeTab, setActiveTab] = useState<"pages" | "navigation" | "menu" | "analytics">("pages");
 
   useEffect(() => {
     supabase.auth
@@ -258,6 +258,17 @@ export default function Admin() {
               )}
             >
               Navigation
+            </button>
+            <button
+              onClick={() => setActiveTab("menu")}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                activeTab === "menu"
+                  ? "bg-white text-[#155ca5] shadow-sm"
+                  : "text-[#155ca5]/70 hover:text-[#155ca5]"
+              )}
+            >
+              Menu (New)
             </button>
             <button
               onClick={() => setActiveTab("analytics")}
@@ -677,6 +688,17 @@ export default function Admin() {
       ) : activeTab === "navigation" ? (
         // Navigation Tab Content - Visual Editor
         <MenuEditor />
+      ) : activeTab === "menu" ? (
+        // Menu Tab Content - Redirect to standalone page
+        <div className="rounded-xl border bg-white p-8 text-center">
+          <h2 className="text-2xl font-bold text-[#155ca5] mb-4">Navigation Menu Editor</h2>
+          <p className="text-muted-foreground mb-6">
+            The new menu editor has its own page with full CRUD functionality
+          </p>
+          <Button asChild>
+            <a href="/admin/menu">Open Menu Editor</a>
+          </Button>
+        </div>
       ) : (
         // Analytics Tab Content
         <ChatAnalytics />
