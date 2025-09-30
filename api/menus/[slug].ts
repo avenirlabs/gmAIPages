@@ -1,188 +1,221 @@
 // api/menus/[slug].ts
+// Header Adapter API: Returns NavItem[] shape for SiteHeader component
+// Queries navigation_items table (new schema) instead of legacy menus tables
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getServiceSupabase } from '../_services/supabase.js';
 
-const T = {
-  MENU: process.env.MENU_TBL || 'menus',
-  ITEMS: process.env.MENU_ITEMS_TBL || 'menu_items',
-  COLS: process.env.MENU_COLS_TBL || 'menu_columns',
-  LINKS: process.env.MENU_LINKS_TBL || 'menu_links',
-  SITE: process.env.MENU_SITE_ID_COL || 'site_id',
-  ORD: process.env.MENU_ORDER_COL || 'order_index',
+// NavItem types expected by SiteHeader component
+type NavItemLink = {
+  type: 'link';
+  label: string;
+  to: string;
 };
 
-function sendJSON(res: VercelResponse, code: number, body: any) {
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  return res.status(code).end(JSON.stringify(body));
-}
-
-function normalizeMenu(raw: any) {
-  // Convert DB shape -> editor shape
-  const items = (raw.items || []).sort((a:any,b:any)=> (a[T.ORD]??0)-(b[T.ORD]??0)).map((it:any)=> {
-    if (it.type === 'mega') {
-      const columns = (it.columns || []).sort((a:any,b:any)=> (a[T.ORD]??0)-(b[T.ORD]??0)).map((c:any)=> ({
-        heading: c.heading ?? c.title ?? '',
-        links: (c.links || []).sort((a:any,b:any)=> (a[T.ORD]??0)-(b[T.ORD]??0)).map((ln:any)=> ({
-          label: ln.label ?? ln.title ?? '',
-          to: ln.to ?? ln.href ?? '#'
-        }))
-      }));
-      return { type: 'mega', label: it.label ?? it.title ?? 'Menu', columns };
-    }
-    // simple link/category
-    return {
-      type: it.type ?? 'link',
-      label: it.label ?? it.title ?? 'Item',
-      to: it.to ?? it.href ?? '#'
-    };
-  });
-  return {
-    slug: raw.slug,
-    title: raw.title ?? raw.name ?? raw.slug,
-    items
+type NavItemMega = {
+  type: 'mega';
+  label: string;
+  columns: Array<{
+    heading: string;
+    links: Array<{
+      label: string;
+      to: string;
+      badge?: string;
+    }>;
+  }>;
+  promo?: {
+    title: string;
+    text: string;
+    to: string;
   };
+};
+
+type NavItem = NavItemLink | NavItemMega;
+
+interface NavigationItem {
+  id: string;
+  parent_id: string | null;
+  type: 'column' | 'group' | 'link';
+  label: string;
+  href: string | null;
+  order: number;
+  badge_text: string | null;
+  icon: string | null;
 }
 
+interface MenuResponse {
+  items: NavItem[];
+  generated_at: string;
+}
+
+/**
+ * Build NavItem[] from navigation_items data
+ */
+function buildNavItems(items: NavigationItem[]): NavItem[] {
+  const result: NavItem[] = [];
+
+  // Group items by parent_id for easy lookup
+  const byParent = new Map<string | null, NavigationItem[]>();
+  items.forEach((item) => {
+    const key = item.parent_id || 'root';
+    if (!byParent.has(key)) {
+      byParent.set(key, []);
+    }
+    byParent.get(key)!.push(item);
+  });
+
+  // Sort helper
+  const sortByOrder = (a: NavigationItem, b: NavigationItem) => a.order - b.order;
+
+  // Get root items (parent_id is null)
+  const rootItems = (byParent.get('root') || []).sort(sortByOrder);
+
+  // 1. Collect root-level links (type=link, parent_id=null)
+  const rootLinks = rootItems.filter((item) => item.type === 'link');
+  rootLinks.forEach((link) => {
+    result.push({
+      type: 'link',
+      label: link.label,
+      to: link.href || '#',
+    });
+  });
+
+  // 2. Collect columns (type=column, parent_id=null)
+  const columns = rootItems.filter((item) => item.type === 'column');
+
+  // 3. If we have columns, build a mega menu item
+  if (columns.length > 0) {
+    const megaColumns = columns.sort(sortByOrder).map((column) => {
+      const columnLinks: Array<{ label: string; to: string; badge?: string }> = [];
+
+      // Get direct links under this column
+      const directLinks = (byParent.get(column.id) || [])
+        .filter((item) => item.type === 'link')
+        .sort(sortByOrder);
+
+      directLinks.forEach((link) => {
+        const linkItem: { label: string; to: string; badge?: string } = {
+          label: link.label,
+          to: link.href || '#',
+        };
+        if (link.badge_text) {
+          linkItem.badge = link.badge_text;
+        }
+        columnLinks.push(linkItem);
+      });
+
+      // Get groups under this column
+      const groups = (byParent.get(column.id) || [])
+        .filter((item) => item.type === 'group')
+        .sort(sortByOrder);
+
+      // For each group, get its links
+      groups.forEach((group) => {
+        const groupLinks = (byParent.get(group.id) || [])
+          .filter((item) => item.type === 'link')
+          .sort(sortByOrder);
+
+        groupLinks.forEach((link) => {
+          const linkItem: { label: string; to: string; badge?: string } = {
+            label: link.label,
+            to: link.href || '#',
+          };
+          if (link.badge_text) {
+            linkItem.badge = link.badge_text;
+          }
+          columnLinks.push(linkItem);
+        });
+      });
+
+      return {
+        heading: column.label,
+        links: columnLinks,
+      };
+    });
+
+    // Add mega menu item
+    const megaLabel = process.env.MENU_MEGA_LABEL || 'Shop';
+    result.push({
+      type: 'mega',
+      label: megaLabel,
+      columns: megaColumns,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * GET /api/menus/[slug] - Returns NavItem[] for header
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Only allow GET
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   const slug = String(req.query.slug || 'main');
   const supa = getServiceSupabase();
 
-  if (req.method === 'GET') {
-    try {
-      // DB → fallback strategy
-      if (supa) {
-        // Pull menu + nested graph
-        const { data, error } = await supa
-          .from(T.MENU)
-          .select(`
-            id, slug, title,
-            items:${T.ITEMS}(
-              id, type, label, to, ${T.ORD},
-              columns:${T.COLS}(
-                id, heading, title, ${T.ORD},
-                links:${T.LINKS}(id, label, title, to, href, ${T.ORD})
-              )
-            )
-          `)
-          .eq('slug', slug)
-          .maybeSingle();
-
-        if (error) {
-          console.warn('[menu:get] supabase error', error.message);
-        } else if (data) {
-          return sendJSON(res, 200, { ok: true, slug, menu: normalizeMenu(data) });
-        }
-      }
-
-      // Fallback: existing minimal fallback you had earlier
-      return sendJSON(res, 200, {
-        ok: true,
-        slug,
-        menu: {
-          slug: 'main',
-          items: [
-            { type: 'link', label: 'Home', to: '/' },
+  if (!supa) {
+    // Return fallback menu if Supabase not configured
+    return res.status(200).json({
+      items: [
+        { type: 'link', label: 'Home', to: '/' },
+        {
+          type: 'mega',
+          label: 'Shop',
+          columns: [
             {
-              type: 'mega',
-              label: 'Shop',
-              columns: [
-                { heading: 'Gifts', links: [{ label: 'For Dad', to: '/gifts/dad' }, { label: 'For Mom', to: '/gifts/mom' }] },
-                { heading: 'Occasions', links: [{ label: 'Birthday', to: '/gifts/birthday' }, { label: 'Anniversary', to: '/gifts/anniversary' }] }
-              ]
-            }
-          ]
-        }
+              heading: 'Gifts',
+              links: [
+                { label: 'For Dad', to: '/gifts/dad' },
+                { label: 'For Mom', to: '/gifts/mom' },
+              ],
+            },
+          ],
+        },
+      ],
+      generated_at: new Date().toISOString(),
+    });
+  }
+
+  try {
+    // Query navigation_items table
+    const { data, error } = await supa
+      .from('navigation_items')
+      .select('id, parent_id, type, label, href, "order", badge_text, icon')
+      .eq('is_active', true)
+      .order('order', { ascending: true });
+
+    if (error) {
+      console.error('[menus:get] Supabase query error:', error);
+      return res.status(500).json({
+        error: 'Database error',
+        generated_at: new Date().toISOString(),
       });
-    } catch (e:any) {
-      console.error('[menu:get] handler error', e?.message || e);
-      return sendJSON(res, 500, { ok: false, error: 'Internal error' });
     }
+
+    const items = (data || []) as NavigationItem[];
+    const navItems = buildNavItems(items);
+
+    const response: MenuResponse = {
+      items: navItems,
+      generated_at: new Date().toISOString(),
+    };
+
+    // Set cache headers for CDN
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    return res.status(200).json(response);
+  } catch (error: any) {
+    console.error('[menus:get] Handler error:', error);
+    return res.status(500).json({
+      error: error.message || 'Internal server error',
+      generated_at: new Date().toISOString(),
+    });
   }
-
-  if (req.method === 'POST') {
-    // Save route: upsert menu tree (service role only)
-    if (!supa) {
-      return sendJSON(res, 503, { ok: false, error: 'Supabase not configured' });
-    }
-    try {
-      const body = req.body && typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const menu = body?.menu;
-      if (!menu || !Array.isArray(menu.items)) {
-        return sendJSON(res, 400, { ok: false, error: 'Invalid payload: { menu: { items: [...] } }' });
-      }
-
-      // 1) Ensure menu row exists
-      const { data: menuRow, error: mErr } = await supa
-        .from(T.MENU)
-        .upsert({ slug, title: menu.title ?? slug })
-        .select('id')
-        .single();
-      if (mErr) return sendJSON(res, 500, { ok: false, error: mErr.message });
-      const menuId = menuRow.id;
-
-      // 2) Clear existing items/columns/links (simple approach; transactional if pg functions exist)
-      await supa.from(T.LINKS).delete().in('id', supa.rpc ? [] : []); // no-op placeholder if you don't want to cascade
-      await supa.from(T.COLS).delete().eq('menu_id', menuId); // adjust foreign key names if different
-      await supa.from(T.ITEMS).delete().eq('menu_id', menuId);
-
-      // 3) Insert items with ordering
-      for (let i = 0; i < menu.items.length; i++) {
-        const it = menu.items[i];
-        const { data: insItem, error: iErr } = await supa
-          .from(T.ITEMS)
-          .insert({
-            menu_id: menuId,
-            type: it.type,
-            label: it.label,
-            to: it.to ?? null,
-            [T.ORD]: i
-          })
-          .select('id')
-          .single();
-        if (iErr) return sendJSON(res, 500, { ok: false, error: iErr.message });
-
-        // If mega, insert columns + links
-        if (it.type === 'mega' && Array.isArray(it.columns)) {
-          for (let c = 0; c < it.columns.length; c++) {
-            const col = it.columns[c];
-            const { data: insCol, error: cErr } = await supa
-              .from(T.COLS)
-              .insert({
-                menu_id: menuId,
-                item_id: insItem.id,
-                heading: col.heading,
-                [T.ORD]: c
-              })
-              .select('id')
-              .single();
-            if (cErr) return sendJSON(res, 500, { ok: false, error: cErr.message });
-
-            for (let k = 0; k < (col.links || []).length; k++) {
-              const ln = col.links[k];
-              const { error: lErr } = await supa
-                .from(T.LINKS)
-                .insert({
-                  menu_id: menuId,
-                  column_id: insCol.id,
-                  label: ln.label,
-                  to: ln.to,
-                  [T.ORD]: k
-                });
-              if (lErr) return sendJSON(res, 500, { ok: false, error: lErr.message });
-            }
-          }
-        }
-      }
-
-      return sendJSON(res, 200, { ok: true, slug, saved: true });
-    } catch (e:any) {
-      console.error('[menu:post] save error', e?.message || e);
-      return sendJSON(res, 500, { ok: false, error: 'Save failed' });
-    }
-  }
-
-  res.setHeader('Allow', 'GET, POST');
-  return sendJSON(res, 405, { ok: false, error: 'Method not allowed' });
 }

@@ -5,12 +5,13 @@ This document describes the public menu API endpoint that serves hierarchical na
 ## Table of Contents
 
 1. [API Endpoints](#api-endpoints)
-2. [Response Format](#response-format)
-3. [Caching Strategy](#caching-strategy)
-4. [Webhook Setup](#webhook-setup)
-5. [Testing](#testing)
-6. [Security Considerations](#security-considerations)
-7. [Troubleshooting](#troubleshooting)
+2. [Header Adapter](#header-adapter)
+3. [Response Format](#response-format)
+4. [Caching Strategy](#caching-strategy)
+5. [Webhook Setup](#webhook-setup)
+6. [Testing](#testing)
+7. [Security Considerations](#security-considerations)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -42,6 +43,33 @@ Access-Control-Allow-Origin: *
 
 ---
 
+### GET /api/menus/[slug]
+
+**Description**: Header adapter endpoint returning NavItem[] shape for SiteHeader component.
+
+**Method**: `GET`
+
+**Authentication**: None (public endpoint)
+
+**URL Parameters**:
+- `slug` - Menu identifier (default: "main")
+
+**Response Format**: JSON
+
+**Response Headers**:
+```
+Content-Type: application/json; charset=utf-8
+Cache-Control: public, s-maxage=3600, stale-while-revalidate=86400
+Access-Control-Allow-Origin: *
+```
+
+**Status Codes**:
+- `200 OK` - Success
+- `405 Method Not Allowed` - Non-GET request
+- `500 Internal Server Error` - Server error
+
+---
+
 ### POST /api/admin/webhooks/menu-revalidate
 
 **Description**: Webhook endpoint for cache invalidation when navigation items change.
@@ -63,6 +91,109 @@ Content-Type: application/json
 - `401 Unauthorized` - Invalid or missing secret
 - `405 Method Not Allowed` - Non-POST request
 - `503 Service Unavailable` - Webhook not configured
+
+---
+
+## Header Adapter
+
+The navigation system provides two different API endpoints serving different purposes:
+
+### GET /api/menu (Tree Structure)
+
+**Purpose**: General-purpose hierarchical menu data
+
+**Format**: Nested tree structure with recursive children
+
+**Use Cases**:
+- Admin interfaces that need full hierarchy
+- Sitemap generation
+- SEO/metadata purposes
+- Custom navigation components
+
+**Structure**:
+```typescript
+{
+  items: [
+    {
+      type: "column",
+      label: "Products",
+      children: [
+        {
+          type: "group",
+          label: "Electronics",
+          children: [
+            {
+              type: "link",
+              label: "Smartphones",
+              href: "/products/smartphones"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  generated_at: "2025-09-30T12:00:00.000Z"
+}
+```
+
+---
+
+### GET /api/menus/[slug] (Header Adapter)
+
+**Purpose**: Adapter for SiteHeader component compatibility
+
+**Format**: Flat NavItem[] array with specific link/mega types
+
+**Use Cases**:
+- SiteHeader component integration
+- Frontend navigation rendering
+- Legacy compatibility with existing header code
+
+**Structure**:
+```typescript
+{
+  items: [
+    {
+      type: "link",
+      label: "Home",
+      to: "/"
+    },
+    {
+      type: "mega",
+      label: "Shop",
+      columns: [
+        {
+          heading: "Electronics",
+          links: [
+            { label: "Smartphones", to: "/products/smartphones", badge: "New" }
+          ]
+        }
+      ]
+    }
+  ],
+  generated_at: "2025-09-30T12:00:00.000Z"
+}
+```
+
+**Transformation Logic**:
+
+1. **Root Links**: Items with `type=link` and `parent_id=null` become `{ type: "link", label, to }`
+2. **Mega Menu**: All columns with their nested groups/links are flattened into a single `{ type: "mega", label, columns }` item
+3. **Column Ordering**: Columns are sorted by `order` field, preserving hierarchy
+4. **Group Flattening**: Groups become `heading` properties in mega columns, with their links merged into a flat array
+
+**Key Differences**:
+
+| Feature | /api/menu | /api/menus/[slug] |
+|---------|-----------|-------------------|
+| Structure | Nested tree (recursive) | Flat array (NavItem[]) |
+| Types | column, group, link | link, mega |
+| Hierarchy | Fully preserved | Flattened for header |
+| Groups | Explicit nodes | Become column headings |
+| Use Case | General purpose | SiteHeader only |
+| Admin Fields | Stripped | Stripped |
+
+**Migration Note**: The `/api/menus/[slug]` endpoint replaces legacy queries to the old `menus`, `menu_items`, `menu_columns`, and `menu_links` tables. It now queries the unified `navigation_items` table and transforms the data to match the expected SiteHeader format.
 
 ---
 
