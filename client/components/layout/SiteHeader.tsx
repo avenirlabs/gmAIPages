@@ -180,8 +180,8 @@ export function SiteHeader() {
         {/* Brand */}
         <Link to="/" className="flex items-center gap-2">
           {/* If you have a logo image, drop it here */}
-          {/* <img src="/logo.svg" alt="Giftsmate" className="h-7 w-auto" /> */}
-          <span className="text-lg font-extrabold tracking-tight text-slate-900">Giftsmate</span>
+          {/* <img src="https://www.giftsmate.net/wp-content/uploads/2025/06/giftsmate-logo.png" alt="Giftsmate" className="h-7 w-auto" /> */}
+  <img src="/logo.svg" alt="Giftsmate" className="h-7 w-auto"/>
         </Link>
 
         {/* Desktop nav */}
@@ -279,7 +279,7 @@ export function SiteHeader() {
         createPortal(
           <button
             type="button"
-            className="fixed inset-0 z-[55] hidden bg-black/10 lg:block"
+            className="fixed inset-0 z-[59] bg-black/10 hidden lg:block"
             aria-label="Close menu overlay"
             onClick={() => setMegaOpen(false)}
           />,
