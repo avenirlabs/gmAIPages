@@ -1,0 +1,68 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Widget Debug</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    .log { background: #f5f5f5; padding: 10px; margin: 5px 0; border-left: 3px solid #333; }
+    .error { border-color: red; background: #fee; }
+    .success { border-color: green; background: #efe; }
+  </style>
+</head>
+<body>
+  <h1>Widget Debug Page</h1>
+  <div id="logs"></div>
+  
+  <hr>
+  <h2>Widget Container</h2>
+  <giftsmate-chat starter-prompts="Test1|Test2|Test3"></giftsmate-chat>
+
+  <script>
+    const logDiv = document.getElementById('logs');
+    function log(msg, isError = false) {
+      const div = document.createElement('div');
+      div.className = 'log ' + (isError ? 'error' : 'success');
+      div.textContent = new Date().toISOString().slice(11, 23) + ' ' + msg;
+      logDiv.appendChild(div);
+      console.log(msg);
+    }
+
+    log('1. Page loaded');
+    
+    window.addEventListener('error', (e) => {
+      log('ERROR: ' + e.message + ' at ' + e.filename + ':' + e.lineno, true);
+    });
+
+    log('2. Starting widget load test...');
+    
+    const script = document.createElement('script');
+    script.src = '/giftsmate-chat.js';
+    script.onload = () => {
+      log('3. Widget script loaded successfully');
+      log('4. Custom element registered? ' + !!customElements.get('giftsmate-chat'));
+      
+      const el = document.querySelector('giftsmate-chat');
+      log('5. Widget element exists? ' + !!el);
+      
+      setTimeout(() => {
+        log('6. After 1s - shadowRoot? ' + !!el?.shadowRoot);
+        if (el?.shadowRoot) {
+          log('7. Shadow DOM children: ' + el.shadowRoot.children.length);
+        }
+      }, 1000);
+      
+      customElements.whenDefined('giftsmate-chat').then(() => {
+        log('8. Custom element defined!');
+      }).catch(e => {
+        log('ERROR defining element: ' + e.message, true);
+      });
+    };
+    script.onerror = () => {
+      log('ERROR: Failed to load widget script', true);
+    };
+    
+    document.head.appendChild(script);
+  </script>
+</body>
+</html>

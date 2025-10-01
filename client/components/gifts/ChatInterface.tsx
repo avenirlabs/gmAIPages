@@ -25,9 +25,15 @@ interface Turn {
 
 export function ChatInterface({
   starterPrompts,
+  apiBase,
 }: {
   starterPrompts?: string[];
+  apiBase?: string;
 }) {
+  // URL helper for cross-origin API calls
+  const base = apiBase || window.location.origin;
+  const url = (path: string) => base.replace(/\/$/, "") + path;
+
   const [turns, setTurns] = useState<Turn[]>([
     {
       role: "assistant",
@@ -93,24 +99,15 @@ export function ChatInterface({
     mutationFn: async (payload) => {
       const controller = new AbortController();
       const t = setTimeout(() => controller.abort(), 20000);
-      const tryUrls = ["/api/gifts/chat", "/.netlify/functions/api/gifts/chat", "/gifts/chat"];
       try {
-        let lastErr: any = null;
-        for (const url of tryUrls) {
-          try {
-            const res = await fetch(url, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-              signal: controller.signal,
-            });
-            if (res.ok) return await res.json();
-            lastErr = new Error(`${url} -> ${res.status}`);
-          } catch (e) {
-            lastErr = e;
-          }
-        }
-        throw lastErr || new Error("All endpoints failed");
+        const res = await fetch(url("/api/gifts/chat"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        });
+        if (res.ok) return await res.json();
+        throw new Error(`API request failed with status ${res.status}`);
       } finally {
         clearTimeout(t);
       }

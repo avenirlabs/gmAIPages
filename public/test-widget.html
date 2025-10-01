@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GM Widget Test - Local</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 24px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-top: 0;
+    }
+    .info {
+      background: #e3f2fd;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      color: #1565c0;
+    }
+    giftsmate-chat {
+      display: block;
+      min-height: 500px;
+      border: 1px dashed #ccc;
+      padding: 8px;
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Giftsmate Widget Test (Local)</h1>
+    <div class="info">
+      ℹ️ Widget with local API. Try searching for gifts!
+    </div>
+
+    <giftsmate-chat
+      starter-prompts="Gifts for sister|Diwali gifts|Birthday return gifts">
+    </giftsmate-chat>
+  </div>
+
+  <!-- Load widget from same origin -->
+  <script src="/giftsmate-chat.js" defer></script>
+
+  <script>
+    window.addEventListener('load', async () => {
+      console.log('[test] Page loaded');
+      const el = document.querySelector('giftsmate-chat');
+      console.log('[test] Has element?', !!el);
+      console.log('[test] Registered?', !!customElements.get('giftsmate-chat'));
+      
+      try {
+        await customElements.whenDefined('giftsmate-chat');
+        console.log('[test] ✅ Custom element defined!');
+        console.log('[test] Has shadowRoot?', !!el?.shadowRoot);
+      } catch (e) {
+        console.error('[test] ❌ Error defining element:', e);
+      }
+    });
+
+    // Log any errors
+    window.addEventListener('error', (e) => {
+      console.error('[test] ❌ Error:', e.message, e.filename, e.lineno);
+    });
+  </script>
+</body>
+</html>

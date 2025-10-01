@@ -10,6 +10,9 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "shared"),
     },
   },
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+  },
   build: {
     lib: {
       entry: path.resolve(__dirname, "widget/src/widget.tsx"),

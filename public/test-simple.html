@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Simplest Test</title>
+</head>
+<body>
+  <h1>Test Page</h1>
+
+  <giftsmate-chat></giftsmate-chat>
+
+  <script>
+    console.log('[simple] 1. Starting');
+
+    window.addEventListener('error', (e) => {
+      console.error('[simple] ERROR:', e.message, 'at', e.filename, ':', e.lineno);
+      alert('Error: ' + e.message);
+    });
+
+    const script = document.createElement('script');
+    script.src = '/giftsmate-chat.js';
+    script.onload = () => {
+      console.log('[simple] 2. Script loaded');
+      console.log('[simple] 3. customElements.get:', customElements.get('giftsmate-chat'));
+      const el = document.querySelector('giftsmate-chat');
+      console.log('[simple] 4. Element:', el);
+
+      setTimeout(() => {
+        console.log('[simple] 5. After delay - shadowRoot:', el?.shadowRoot);
+        if (el?.shadowRoot) {
+          console.log('[simple] 6. Shadow children:', el.shadowRoot.innerHTML.length, 'chars');
+        } else {
+          alert('No shadowRoot found!');
+        }
+      }, 500);
+    };
+    script.onerror = (e) => {
+      console.error('[simple] Script load failed:', e);
+      alert('Script load failed!');
+    };
+
+    document.head.appendChild(script);
+  </script>
+</body>
+</html>
