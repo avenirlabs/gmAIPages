@@ -3,7 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
-import { applyCors, handlePreflight } from './_services/cors.js';
+import { applyCORS, handlePreflight } from './_services/cors.js';
 
 // Supabase client
 function getSupabaseAdmin() {
@@ -506,7 +506,7 @@ export default async function handler(req, res) {
   try {
     // Handle CORS with allowlist
     if (handlePreflight(req, res)) return;
-    applyCors(req, res);
+    applyCORS(req, res);
 
     // Parse the path
     const path = req.url?.split('?')[0] || '/';

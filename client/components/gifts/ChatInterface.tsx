@@ -102,6 +102,8 @@ export function ChatInterface({
       try {
         const res = await fetch(url("/api/gifts/chat"), {
           method: "POST",
+          mode: "cors",
+          credentials: "omit", // change to 'include' ONLY if API uses cookies and you also set ACAO + ACAC
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
           signal: controller.signal,
