@@ -81,5 +81,7 @@ export interface ChatResponseBody {
     source: 'algolia';
     intentToken?: string;
     broadened?: boolean;
+    effectiveQuery?: string;
+    appliedRefinements?: string[];
   };
 }

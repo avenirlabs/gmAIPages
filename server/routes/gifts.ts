@@ -5,6 +5,23 @@ import { searchProductsPaginated } from "../services/algolia";
 import { logChatEvent } from "../services/telemetry";
 import { randomUUID } from "crypto";
 
+// Helper to extract hashtags from query
+function extractTags(query: string): string[] {
+  const tagRe = /(^|\s)#([a-z0-9_]{2,40})\b/gi;
+  const tags: string[] = [];
+  let match;
+  while ((match = tagRe.exec(query))) {
+    const tag = match[2].toLowerCase().replace(/_+/g, "_");
+    if (!tags.includes(tag)) tags.push(tag);
+  }
+  return tags;
+}
+
+// Helper to strip hashtags from query
+function stripTags(query: string): string {
+  return query.replace(/(^|\s)#([a-z0-9_]{2,40})\b/gi, " ").replace(/\s+/g, " ").trim();
+}
+
 export const handleChat = async (req: any, res: any) => {
   try {
     const started = Date.now();
@@ -38,6 +55,10 @@ export const handleChat = async (req: any, res: any) => {
     }
 
     const pageSize = perPage || parseInt(process.env.CHAT_PAGE_SIZE || "12");
+
+    // Extract tags from message for meta display
+    const tags = extractTags(message);
+    const cleanMessage = stripTags(message);
 
     const parsed = await parseUserQueryWithIntentToken(
       message,
@@ -104,6 +125,8 @@ export const handleChat = async (req: any, res: any) => {
         source: 'algolia' as const,
         intentToken: parsed.intentToken,
         broadened,
+        effectiveQuery: parsed.searchQuery,
+        appliedRefinements: tags,
       },
     };
 

@@ -234,3 +234,24 @@
   opacity: 0.75;
   margin-bottom: 0.375rem;
 }
+
+/* Step 9: Meta bar showing effective query + refinements + results */
+.gm-meta {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(0,0,0,.55);
+  margin: 6px 0 10px;
+}
+
+.gm-meta b {
+  font-weight: 600;
+}
+
+.gm-meta .gm-meta-dot::before {
+  content: "•";
+  margin: 0 6px;
+  opacity: .6;
+}

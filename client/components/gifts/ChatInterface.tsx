@@ -59,6 +59,9 @@ export function ChatInterface({
   // Holds meta from the latest server response (to show applied refinements)
   const [lastMeta, setLastMeta] = useState<{ appliedRefinements?: string[]; effectiveQuery?: string; originalQuery?: string } | null>(null);
 
+  // Track result count for meta display
+  const [lastResultCount, setLastResultCount] = useState<number | null>(null);
+
   // Persisted client view of active tags (kept in sync with input and server meta)
   const [activeTags, setActiveTags] = useState<string[]>([]);
 
@@ -159,6 +162,9 @@ export function ChatInterface({
     onSuccess: (data, variables) => {
       // Capture meta from latest server response
       setLastMeta(data?.meta ?? null);
+
+      // Track result count for meta display
+      setLastResultCount((data?.products ?? []).length);
 
       // If this is load more (cursor provided), append to existing turn
       if (variables.cursor) {
@@ -604,6 +610,34 @@ export function ChatInterface({
               </button>
             </div>
           )} */}
+
+          {/* Step 9: Show effective query + refinements + results count */}
+          {(lastMeta?.effectiveQuery || (lastMeta?.appliedRefinements?.length ?? 0) > 0) && (
+            <div className="gm-meta">
+              {lastMeta?.effectiveQuery && (
+                <>
+                  <b>Searching:</b>
+                  <span>"{lastMeta.effectiveQuery}"</span>
+                </>
+              )}
+              {(lastMeta?.appliedRefinements?.length ?? 0) > 0 && (
+                <>
+                  <span className="gm-meta-dot" />
+                  <b>Refinements:</b>
+                  <span>
+                    {lastMeta.appliedRefinements!.map(t => `#${t}`).join(' ')}
+                  </span>
+                </>
+              )}
+              {typeof lastResultCount === 'number' && (
+                <>
+                  <span className="gm-meta-dot" />
+                  <b>Results:</b>
+                  <span>{lastResultCount}</span>
+                </>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <input
