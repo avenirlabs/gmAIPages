@@ -122,7 +122,8 @@ export function ChatInterface({
   // Build refinement chips from taxonomy
   const chips: Persona[] = useMemo(() => {
     // If we have no signal yet, still show fallback chips
-    const q = currentQuery || "gifts";
+    // Strip tags from currentQuery to get clean base query for chip generation
+    const q = stripAllTags(currentQuery || "gifts");
     return getRefinementChips({ query: q, relationHint, limit: 8 });
   }, [currentQuery]);
 
