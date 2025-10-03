@@ -411,9 +411,11 @@ const handlers = {
         s += tagScore(p?.description || "", tags) * 1;     // mild influence
 
         // Also score based on hint queryTerms (e.g., "apron", "kitchen")
+        // These should have STRONG influence since they're curated synonyms
         if (queryTerms.length > 0) {
-          s += tagScore(p?.title || "", queryTerms) * 2;   // boost title matches
-          s += tagScore(p?.description || "", queryTerms) * 0.5; // light boost for description
+          s += tagScore(p?.title || "", queryTerms) * 5;   // VERY strong boost for title matches
+          s += tagScore((p?.tags || []).join(" "), queryTerms) * 3; // Strong boost for tag matches
+          s += tagScore(p?.description || "", queryTerms) * 1.5; // Moderate boost for description
         }
 
         return s;

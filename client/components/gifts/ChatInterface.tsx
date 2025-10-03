@@ -327,8 +327,10 @@ export function ChatInterface({
 
   function applyRefinement(persona: Persona) {
     // Strategy: append semantic tags to the query and submit immediately.
-    // This works with the current API w/o any server change.
-    const base = currentQuery && currentQuery.length > 0 ? currentQuery : "gifts";
+    // Get the CLEAN query (strip existing tags first to avoid accumulation)
+    const current = currentQuery && currentQuery.length > 0 ? currentQuery : "gifts";
+    const base = stripAllTags(current);  // Remove any existing tags before adding new ones
+
     // Add lightweight tag hints; avoid special chars beyond # for easy parsing later if needed
     const tagSuffix = persona.tags.map(t => `#${t.replace(/\s+/g, "_")}`).join(" ");
     const refined = `${base} ${tagSuffix}`.trim();
