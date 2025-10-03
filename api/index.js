@@ -4,6 +4,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { applyCORS, handlePreflight } from './_services/cors.js';
+import { parseQueryTags, tagScore } from './_services/refinements.js';
+import { collectHintsFromTags } from './_services/refinement-hints.js';
 
 // Supabase client
 function getSupabaseAdmin() {
@@ -285,9 +287,19 @@ const handlers = {
         intentToken,
         filters
       } = bodyData || {};
-      const searchQuery = query || message;
+      const rawQuery = (query || message || "").toString();
 
-      if (!searchQuery || typeof searchQuery !== "string" || searchQuery.trim().length === 0) {
+      // Parse and normalize tags from query
+      const { plainQuery, tags } = parseQueryTags(rawQuery);
+
+      // Keep existing behavior if no tags; otherwise use plainQuery for the search provider
+      const searchQuery = plainQuery || rawQuery || "";
+
+      // Step 7: Collect search hints from tags
+      const hints = tags.length ? collectHintsFromTags(tags) : { queryTerms: [], optionalFilters: [], strictFilters: [] };
+      const expandedQuery = [searchQuery, ...hints.queryTerms].join(' ').trim();
+
+      if (!searchQuery.trim() && tags.length === 0) {
         return res.status(400).json({
           error: "Missing or invalid query/message parameter",
           receivedBody: bodyData,
@@ -328,26 +340,36 @@ const handlers = {
       if (client) {
         try {
           const indexName = process.env.ALGOLIA_INDEX_NAME || 'gmProducts';
+
+          // Step 7: Build Algolia search params with expanded query and optional filters
+          const searchParams = {
+            query: expandedQuery,  // Use expanded query with hint terms
+            hitsPerPage: pageSize,
+            page: currentPage - 1, // Algolia uses 0-based pages
+            getRankingInfo: true,  // Helps debug why items rank
+            attributesToRetrieve: [
+              'objectID',
+              'title',
+              'name',
+              'description',
+              'price',
+              'currency',
+              'image',
+              'url',
+              'link',
+              'tags',
+              'vendor'
+            ]
+          };
+
+          // Add optionalFilters if we have hints (boosts matches, doesn't hard-filter)
+          if (hints.optionalFilters.length > 0) {
+            searchParams.optionalFilters = hints.optionalFilters;
+          }
+
           const searchResult = await client.searchSingleIndex({
             indexName,
-            searchParams: {
-              query: searchQuery.trim(),
-              hitsPerPage: pageSize,
-              page: currentPage - 1, // Algolia uses 0-based pages
-              attributesToRetrieve: [
-                'objectID',
-                'title',
-                'name',
-                'description',
-                'price',
-                'currency',
-                'image',
-                'url',
-                'link',
-                'tags',
-                'vendor'
-              ]
-            }
+            searchParams
           });
 
           const hits = searchResult.hits || [];
@@ -369,6 +391,25 @@ const handlers = {
         } catch (searchError) {
           console.error('Algolia search error:', searchError);
         }
+      }
+
+      // Re-rank results based on tags (if tags were provided)
+      function boostScoreForProduct(p, tags) {
+        let s = 0;
+        s += tagScore(p?.title || "", tags) * 3;           // title is most important
+        s += tagScore((p?.tags || []).join(" "), tags) * 2;
+        s += tagScore(p?.description || "", tags) * 1;     // mild influence
+        return s;
+      }
+
+      // Attach a transient _gmScore for sorting; do NOT persist
+      if (tags.length > 0) {
+        products = products.map(p => ({
+          ...p,
+          _gmScore: boostScoreForProduct(p, tags),
+        }))
+        // Sort: higher score first; then keep original order as tiebreaker (stable-ish)
+        .sort((a, b) => (b._gmScore ?? 0) - (a._gmScore ?? 0));
       }
 
       // Generate refinement chips based on search results
@@ -427,7 +468,12 @@ const handlers = {
           queryLatencyMs: totalLatencyMs,
           source: 'algolia',
           intentToken: intentTokenGenerated,
-          broadened: false // TODO: Implement zero-hit fallback in consolidated API
+          broadened: false, // TODO: Implement zero-hit fallback in consolidated API
+          appliedRefinements: tags,      // e.g. ["cooking","kitchen","chef"]
+          effectiveQuery: searchQuery,   // what server used to search upstream
+          originalQuery: rawQuery,       // what user sent
+          expandedQuery,                 // Step 7: query + hint terms
+          optionalFilters: hints.optionalFilters  // Step 7: Algolia optional filters applied
         }
       });
 

@@ -1,0 +1,224 @@
+{
+  "relations": {
+    "dad": {
+      "aliases": ["father", "papa", "dad-in-law", "father-in-law"],
+      "personas": [
+        {
+          "id": "dad_cooking",
+          "label": "Loves cooking",
+          "tags": ["cooking", "kitchen", "chef"],
+          "hints": {
+            "queryTerms": ["apron", "kitchen", "chef", "bbq", "grilling", "cookware"],
+            "mustTags": ["cooking", "kitchen", "chef"],
+            "optionalFilters": [
+              ["category:Aprons", "category:Kitchen & Dining"],
+              ["collection:Cooking", "collection:BBQ", "collection:Chef"]
+            ],
+            "strictFilters": []
+          }
+        },
+        {
+          "id": "dad_whisky",
+          "label": "Whisky lover",
+          "tags": ["whisky", "barware", "whiskey"],
+          "hints": {
+            "queryTerms": ["whiskey", "glass", "decanter", "bar", "scotch", "bourbon"],
+            "mustTags": ["whisky", "barware", "whiskey"],
+            "optionalFilters": [
+              ["category:Barware", "category:Drinkware"],
+              ["collection:Whiskey", "collection:Bar Accessories"]
+            ],
+            "strictFilters": []
+          }
+        },
+        {
+          "id": "dad_runner",
+          "label": "Runner",
+          "tags": ["running", "fitness", "sports"],
+          "hints": {
+            "queryTerms": ["running", "shoes", "tracker", "fitness", "sports", "jogger"],
+            "mustTags": ["running", "fitness", "sports"],
+            "optionalFilters": [
+              ["category:Sports & Fitness", "category:Running"],
+              ["collection:Fitness", "collection:Sports"]
+            ],
+            "strictFilters": []
+          }
+        },
+        {
+          "id": "dad_bookworm",
+          "label": "Bookworm",
+          "tags": ["books", "reading"],
+          "hints": {
+            "queryTerms": ["book", "bookmark", "reading", "novel", "library"],
+            "mustTags": ["books", "reading"],
+            "optionalFilters": [
+              ["category:Books", "category:Stationery"],
+              ["collection:Reading", "collection:Books"]
+            ],
+            "strictFilters": []
+          }
+        },
+        {
+          "id": "dad_gamer",
+          "label": "Gamer",
+          "tags": ["gaming"],
+          "hints": {
+            "queryTerms": ["game", "gaming", "console", "controller", "headset"],
+            "mustTags": ["gaming"],
+            "optionalFilters": [
+              ["category:Gaming", "category:Electronics"],
+              ["collection:Gaming", "collection:Tech"]
+            ],
+            "strictFilters": []
+          }
+        }
+      ]
+    },
+    "mom": {
+      "aliases": ["mother", "mum", "mummy", "mom-in-law", "mother-in-law"],
+      "personas": [
+        {
+          "id": "mom_spa",
+          "label": "Spa & self-care",
+          "tags": ["spa", "self-care", "bath"],
+          "hints": {
+            "queryTerms": ["spa", "bath", "aromatherapy", "skincare", "massage", "relaxation"],
+            "mustTags": ["spa", "self-care", "bath"],
+            "optionalFilters": [
+              ["category:Beauty & Personal Care", "category:Bath & Body"],
+              ["collection:Spa", "collection:Self Care"]
+            ],
+            "strictFilters": []
+          }
+        },
+        {
+          "id": "mom_gardener",
+          "label": "Gardener",
+          "tags": ["gardening", "plants"],
+          "hints": {
+            "queryTerms": ["plant", "garden", "seeds", "pots", "gardening", "flowers"],
+            "mustTags": ["gardening", "plants"],
+            "optionalFilters": [
+              ["category:Gardening", "category:Home & Garden"],
+              ["collection:Gardening", "collection:Plants"]
+            ],
+            "strictFilters": []
+          }
+        },
+        {
+          "id": "mom_cooking",
+          "label": "Home chef",
+          "tags": ["cooking", "kitchen"],
+          "hints": {
+            "queryTerms": ["cooking", "kitchen", "recipe", "baking", "cookware"],
+            "mustTags": ["cooking", "kitchen"],
+            "optionalFilters": [
+              ["category:Kitchen & Dining", "category:Cookware"],
+              ["collection:Cooking", "collection:Kitchen"]
+            ],
+            "strictFilters": []
+          }
+        },
+        {
+          "id": "mom_yoga",
+          "label": "Yoga lover",
+          "tags": ["yoga", "fitness"],
+          "hints": {
+            "queryTerms": ["yoga", "mat", "meditation", "wellness", "fitness"],
+            "mustTags": ["yoga", "fitness"],
+            "optionalFilters": [
+              ["category:Sports & Fitness", "category:Yoga"],
+              ["collection:Yoga", "collection:Wellness"]
+            ],
+            "strictFilters": []
+          }
+        }
+      ]
+    },
+    "sister": {
+      "aliases": ["sis", "didi", "behen"],
+      "personas": [
+        {
+          "id": "sis_travel",
+          "label": "Traveler",
+          "tags": ["travel", "luggage"],
+          "hints": {
+            "queryTerms": ["travel", "luggage", "backpack", "suitcase", "passport"],
+            "mustTags": ["travel", "luggage"],
+            "optionalFilters": [
+              ["category:Travel", "category:Luggage"],
+              ["collection:Travel", "collection:Wanderlust"]
+            ],
+            "strictFilters": []
+          }
+        },
+        {
+          "id": "sis_art",
+          "label": "Arts & crafts",
+          "tags": ["art", "craft"],
+          "hints": {
+            "queryTerms": ["art", "craft", "painting", "drawing", "creative"],
+            "mustTags": ["art", "craft"],
+            "optionalFilters": [
+              ["category:Arts & Crafts", "category:Stationery"],
+              ["collection:Art", "collection:Craft"]
+            ],
+            "strictFilters": []
+          }
+        },
+        {
+          "id": "sis_fitness",
+          "label": "Fitness",
+          "tags": ["fitness", "yoga", "gym"],
+          "hints": {
+            "queryTerms": ["fitness", "gym", "workout", "yoga", "exercise"],
+            "mustTags": ["fitness", "yoga", "gym"],
+            "optionalFilters": [
+              ["category:Sports & Fitness", "category:Gym"],
+              ["collection:Fitness", "collection:Workout"]
+            ],
+            "strictFilters": []
+          }
+        }
+      ]
+    }
+  },
+  "fallback": [
+    {
+      "id": "gen_personalized",
+      "label": "Personalized gifts",
+      "tags": ["personalized"],
+      "hints": {
+        "queryTerms": ["personalized", "custom", "engraved", "monogram"],
+        "mustTags": ["personalized"],
+        "optionalFilters": [
+          ["category:Personalized", "category:Custom Gifts"]
+        ],
+        "strictFilters": []
+      }
+    },
+    {
+      "id": "gen_budget",
+      "label": "Under ₹999",
+      "tags": ["budget_999"],
+      "hints": {
+        "queryTerms": ["affordable", "budget", "under 1000"],
+        "mustTags": ["budget_999"],
+        "optionalFilters": [],
+        "strictFilters": []
+      }
+    },
+    {
+      "id": "gen_last_min",
+      "label": "Last-minute",
+      "tags": ["fast_shipping"],
+      "hints": {
+        "queryTerms": ["quick delivery", "express", "same day"],
+        "mustTags": ["fast_shipping"],
+        "optionalFilters": [],
+        "strictFilters": []
+      }
+    }
+  ]
+}
