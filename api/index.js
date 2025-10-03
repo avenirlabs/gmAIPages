@@ -297,6 +297,9 @@ const handlers = {
 
       // Step 7: Collect search hints from tags
       const hints = tags.length ? collectHintsFromTags(tags) : { queryTerms: [], optionalFilters: [], strictFilters: [] };
+
+      // Keep expandedQuery for meta debugging, but don't use it for search
+      // Instead, let Algolia use the clean searchQuery + optionalFilters
       const expandedQuery = [searchQuery, ...hints.queryTerms].join(' ').trim();
 
       if (!searchQuery.trim() && tags.length === 0) {
@@ -341,9 +344,11 @@ const handlers = {
         try {
           const indexName = process.env.ALGOLIA_INDEX_NAME || 'gmProducts';
 
-          // Step 7: Build Algolia search params with expanded query and optional filters
+          // Step 7: Build Algolia search params - use CLEAN query, not expanded
+          // The expanded query is too restrictive (requires ALL terms to match)
+          // Instead: use original query + optionalFilters to BOOST relevant items
           const searchParams = {
-            query: expandedQuery,  // Use expanded query with hint terms
+            query: searchQuery.trim(),  // Use clean query WITHOUT hint terms
             hitsPerPage: pageSize,
             page: currentPage - 1, // Algolia uses 0-based pages
             getRankingInfo: true,  // Helps debug why items rank
@@ -358,11 +363,15 @@ const handlers = {
               'url',
               'link',
               'tags',
-              'vendor'
+              'vendor',
+              'category',
+              'product_type',
+              'collections'
             ]
           };
 
           // Add optionalFilters if we have hints (boosts matches, doesn't hard-filter)
+          // Algolia will rank products matching these filters higher, but won't exclude others
           if (hints.optionalFilters.length > 0) {
             searchParams.optionalFilters = hints.optionalFilters;
           }
@@ -393,20 +402,28 @@ const handlers = {
         }
       }
 
-      // Re-rank results based on tags (if tags were provided)
-      function boostScoreForProduct(p, tags) {
+      // Re-rank results based on tags AND hint query terms (if provided)
+      function boostScoreForProduct(p, tags, queryTerms = []) {
         let s = 0;
+        // Score based on original tags
         s += tagScore(p?.title || "", tags) * 3;           // title is most important
         s += tagScore((p?.tags || []).join(" "), tags) * 2;
         s += tagScore(p?.description || "", tags) * 1;     // mild influence
+
+        // Also score based on hint queryTerms (e.g., "apron", "kitchen")
+        if (queryTerms.length > 0) {
+          s += tagScore(p?.title || "", queryTerms) * 2;   // boost title matches
+          s += tagScore(p?.description || "", queryTerms) * 0.5; // light boost for description
+        }
+
         return s;
       }
 
       // Attach a transient _gmScore for sorting; do NOT persist
-      if (tags.length > 0) {
+      if (tags.length > 0 || hints.queryTerms.length > 0) {
         products = products.map(p => ({
           ...p,
-          _gmScore: boostScoreForProduct(p, tags),
+          _gmScore: boostScoreForProduct(p, tags, hints.queryTerms),
         }))
         // Sort: higher score first; then keep original order as tiebreaker (stable-ish)
         .sort((a, b) => (b._gmScore ?? 0) - (a._gmScore ?? 0));
