@@ -133,3 +133,104 @@
   .ai-typing-dot:nth-child(2) { animation-delay: 0.15s; }
   .ai-typing-dot:nth-child(3) { animation-delay: 0.3s; }
 }
+
+/* Step 6: Refinement chips styles (matching widget Shadow DOM styles) */
+.gm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.375rem;
+}
+
+.gm-chip {
+  appearance: none;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0.375rem 0.625rem;
+  font-size: 0.875rem;
+  border-radius: 9999px;
+  background: #fff;
+  cursor: pointer;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+  transition: all 0.15s ease;
+}
+
+.gm-chip:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: translateY(-0.5px);
+}
+
+.gm-chip:active {
+  transform: translateY(0);
+}
+
+/* Active refinements header */
+.gm-refinedby-wrap {
+  margin: 0.625rem 0 0.5rem;
+}
+
+.gm-refinedby-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.gm-refinedby-label {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.gm-clear-refinements {
+  font-size: 0.75rem;
+  border: 0;
+  background: transparent;
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.gm-clear-refinements:hover {
+  opacity: 1;
+}
+
+/* Active refinement badges */
+.gm-refinedby-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.gm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 0.75rem;
+}
+
+.gm-badge-x {
+  all: unset;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0.125rem;
+  border-radius: 0.375rem;
+}
+
+.gm-badge-x:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Empty-state */
+.gm-emptystate {
+  margin: 0.5rem 0 0.375rem;
+}
+
+.gm-emptystate-title {
+  font-size: 0.75rem;
+  opacity: 0.75;
+  margin-bottom: 0.375rem;
+}

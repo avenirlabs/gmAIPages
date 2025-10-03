@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ChatMessage } from "./ChatMessage";
-import { RefinementChips } from "./RefinementChips";
-import { FacetChips } from "./FacetChips";
+// import { RefinementChips } from "./RefinementChips"; // Step 6: Removed legacy chips
+// import { FacetChips } from "./FacetChips"; // Step 6: Removed legacy facet chips
 import { EmptyState } from "./EmptyState";
 import { BroadeningBanner } from "./BroadeningBanner";
 import type { ChatResponseBody, ProductItem, PageInfo, GiftFilters, FacetCounts } from "@shared/api";
@@ -11,6 +11,8 @@ import { StarterPrompts } from "./StarterPrompts";
 import { useGiftFilters } from "@/hooks/useGiftFilters";
 import { chipToFilter, isChipActive, filterToChip } from "@/utils/chipMapping";
 import { X } from "lucide-react";
+import { getRefinementChips, extractTagsFromQuery, removeTagFromQuery, stripAllTags, addTagsToQuery, replaceAllTags } from "../../utils/refinements";
+import type { Persona } from "../../types/taxonomy";
 
 interface Turn {
   role: "user" | "assistant";
@@ -21,6 +23,14 @@ interface Turn {
   meta?: any;
   query?: string; // Store original query for pagination
   broadened?: boolean; // Track if results were broadened
+}
+
+function lastUserQuery(turns: { role: string; content?: string }[]): string {
+  for (let i = turns.length - 1; i >= 0; i--) {
+    const t = turns[i];
+    if (t && t.role === "user" && t.content?.trim()) return t.content.trim();
+  }
+  return "";
 }
 
 export function ChatInterface({
@@ -45,6 +55,16 @@ export function ChatInterface({
   const [lastRefine, setLastRefine] = useState<string[]>([]);
   const [lastFacets, setLastFacets] = useState<FacetCounts>({});
   const [loadingMoreStates, setLoadingMoreStates] = useState<Record<number, boolean>>({});
+
+  // Holds meta from the latest server response (to show applied refinements)
+  const [lastMeta, setLastMeta] = useState<{ appliedRefinements?: string[]; effectiveQuery?: string; originalQuery?: string } | null>(null);
+
+  // Persisted client view of active tags (kept in sync with input and server meta)
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+
+  // Step 6: Drawer removed - no longer needed
+  // const [drawerOpen, setDrawerOpen] = useState(false);
+  // const [drawerSelected, setDrawerSelected] = useState<string[]>([]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -91,6 +111,27 @@ export function ChatInterface({
     return pills;
   }, [selectedFilters]);
 
+  // Infer "current query" from either the live input or the last user turn.
+  const currentQuery = (typeof input === "string" && input.trim())
+    ? input.trim()
+    : lastUserQuery(turns);
+
+  // Optionally allow external hint (future prop); for now undefined
+  const relationHint: string | undefined = undefined;
+
+  // Build refinement chips from taxonomy
+  const chips: Persona[] = useMemo(() => {
+    // If we have no signal yet, still show fallback chips
+    const q = currentQuery || "gifts";
+    return getRefinementChips({ query: q, relationHint, limit: 8 });
+  }, [currentQuery]);
+
+  // Step 6: Drawer removed - no longer need drawer chips
+  // const drawerChips: Persona[] = useMemo(() => {
+  //   const q = currentQuery || "gifts";
+  //   return getRefinementChips({ query: q, relationHint, limit: 24 });
+  // }, [currentQuery]);
+
   const mutate = useMutation<
     ChatResponseBody,
     Error,
@@ -115,6 +156,9 @@ export function ChatInterface({
       }
     },
     onSuccess: (data, variables) => {
+      // Capture meta from latest server response
+      setLastMeta(data?.meta ?? null);
+
       // If this is load more (cursor provided), append to existing turn
       if (variables.cursor) {
         setTurns((prevTurns) => {
@@ -172,6 +216,11 @@ export function ChatInterface({
       setTurns((t) => [...t, assistant]);
     },
   });
+
+  // Sync activeTags whenever input changes (source of truth = input)
+  useEffect(() => {
+    setActiveTags(extractTagsFromQuery(input || ""));
+  }, [input]);
 
   // Auto-scroll only if user is already near bottom; otherwise show FAB
   useEffect(() => {
@@ -276,6 +325,43 @@ export function ChatInterface({
     }
   };
 
+  function applyRefinement(persona: Persona) {
+    // Strategy: append semantic tags to the query and submit immediately.
+    // This works with the current API w/o any server change.
+    const base = currentQuery && currentQuery.length > 0 ? currentQuery : "gifts";
+    // Add lightweight tag hints; avoid special chars beyond # for easy parsing later if needed
+    const tagSuffix = persona.tags.map(t => `#${t.replace(/\s+/g, "_")}`).join(" ");
+    const refined = `${base} ${tagSuffix}`.trim();
+
+    // Update input and trigger send
+    setInput(refined);
+    handleSend(refined);
+  }
+
+  function handleRemoveRefinement(tag: string) {
+    // Remove a single #tag from the input and re-send
+    const current = input || currentQuery || "";
+    const next = removeTagFromQuery(current, tag);
+    setInput(next);
+    // Use setTimeout to ensure state update completes before triggering send
+    setTimeout(() => handleSend(next), 0);
+  }
+
+  function handleClearRefinements() {
+    const current = input || currentQuery || "";
+    const next = stripAllTags(current);
+    setInput(next);
+    // Use setTimeout to ensure state update completes before triggering send
+    setTimeout(() => handleSend(next), 0);
+  }
+
+  // Step 6: Drawer handlers removed - no longer needed
+  // const toggleDrawer = () => setDrawerOpen(v => !v);
+  // const closeDrawer = () => setDrawerOpen(false);
+  // function toggleDrawerTag(tagList: string[]) { ... }
+  // function applyDrawerSelection() { ... }
+  // function clearDrawerSelection() { ... }
+
   const placeholder = useMemo(
     () => "Try: gifts for sister who loves cooking under ₹500, or: birthday ideas for gym lover",
     []
@@ -344,7 +430,8 @@ export function ChatInterface({
           </div>
         ))}
 
-        {!turns.some((t) => t.role === "user") && (
+        {/* Step 6: Removed legacy StarterPrompts from conversation - now using taxonomy chips below */}
+        {/* {!turns.some((t) => t.role === "user") && (
           <div className="rounded-xl border bg-[#DBEBFF]/70 p-3">
             <p className="mb-2 text-xs font-semibold text-[#222529]">Try one of these:</p>
             <StarterPrompts
@@ -356,7 +443,7 @@ export function ChatInterface({
               onSelect={(p) => handleSend(p)}
             />
           </div>
-        )}
+        )} */}
 
         {mutate.isPending ? (
           <div className="ai-typing px-2" aria-live="polite">
@@ -429,8 +516,8 @@ export function ChatInterface({
             </div>
           )}
 
-          {/* Show facet chips with counts if facets are available */}
-          {Object.keys(lastFacets).length > 0 ? (
+          {/* Step 6: Removed legacy FacetChips and RefinementChips - replaced with taxonomy-based chips below */}
+          {/* {Object.keys(lastFacets).length > 0 ? (
             <FacetChips
               chips={lastRefine}
               facets={lastFacets}
@@ -445,7 +532,75 @@ export function ChatInterface({
               activeChips={activeChips}
               className="mb-3"
             />
+          )} */}
+
+          {/* Active refinements (server-confirmed) */}
+          {(lastMeta?.appliedRefinements?.length ?? 0) > 0 && (
+            <div className="gm-refinedby-wrap">
+              <div className="gm-refinedby-head">
+                <span className="gm-refinedby-label">Refined by:</span>
+                <button className="gm-clear-refinements" onClick={handleClearRefinements} type="button" aria-label="Clear refinements">
+                  Clear
+                </button>
+              </div>
+              <div className="gm-refinedby-badges">
+                {lastMeta!.appliedRefinements!.map((t) => (
+                  <span key={t} className="gm-badge" title={`Remove #${t}`}>
+                    #{t}
+                    <button className="gm-badge-x" onClick={() => handleRemoveRefinement(t)} aria-label={`Remove ${t}`} type="button">×</button>
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
+
+          {/* Empty-state suggestions or refinement chips */}
+          {(() => {
+            const noConversationYet = turns.length <= 1 && turns[0]?.role === "assistant";
+            const inputIsEmpty = !currentQuery?.trim();
+            const showEmptyState = noConversationYet && inputIsEmpty;
+
+            if (showEmptyState) {
+              return (
+                <div className="gm-emptystate">
+                  <div className="gm-emptystate-title">Try one of these:</div>
+                  <div className="gm-chips">
+                    {chips.slice(0, 8).map((p) => (
+                      <button key={p.id} className="gm-chip" onClick={() => applyRefinement(p)} type="button">
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            } else if (chips && chips.length > 0) {
+              return (
+                <div className="gm-chips">
+                  {chips.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="gm-chip"
+                      onClick={() => applyRefinement(p)}
+                      title={`Refine: ${p.label}`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* Step 6: Removed "Refine more" drawer trigger */}
+          {/* {chips && chips.length > 0 && (
+            <div className="gm-refine-more-wrap">
+              <button className="gm-refine-more-btn" type="button" onClick={toggleDrawer} aria-expanded={drawerOpen}>
+                Refine more
+              </button>
+            </div>
+          )} */}
 
           <div className="flex items-center gap-3">
             <input
@@ -466,6 +621,43 @@ export function ChatInterface({
           </div>
         </div>
       </div>
+
+      {/* Step 6: Drawer UI removed */}
+      {/* {drawerOpen && (
+        <div className="gm-drawer-overlay" onClick={closeDrawer} role="presentation">
+          <div className="gm-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="gm-drawer-head">
+              <div className="gm-drawer-title">Refine your search</div>
+              <button className="gm-drawer-close" onClick={closeDrawer} type="button" aria-label="Close">×</button>
+            </div>
+
+            <div className="gm-drawer-subtitle">Pick a few that fit best:</div>
+
+            <div className="gm-drawer-chips">
+              {drawerChips.map((p) => {
+                const tags = p.tags ?? [];
+                const allIn = tags.every(t => drawerSelected.includes(t.toLowerCase().replace(/_+/g, "_")));
+                return (
+                  <button
+                    key={p.id}
+                    className={`gm-chip ${allIn ? "gm-chip--active" : ""}`}
+                    type="button"
+                    onClick={() => toggleDrawerTag(tags)}
+                    title={p.label}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="gm-drawer-actions">
+              <button className="gm-btn-secondary" type="button" onClick={clearDrawerSelection}>Clear selection</button>
+              <button className="gm-btn-primary" type="button" onClick={applyDrawerSelection}>Apply refinements</button>
+            </div>
+          </div>
+        </div>
+      )} */}
     </div>
   );
 }
