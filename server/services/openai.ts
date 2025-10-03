@@ -148,7 +148,7 @@ export async function parseUserQueryWithOpenAI(
   }
 }
 
-function heuristicParse(
+export function heuristicParse(
   message: string,
   selectedRefinements: string[],
   history: ChatTurn[] = [],
@@ -171,7 +171,9 @@ function heuristicParse(
   if (/(under|below).*\$?50|500/.test(lower)) chips.add("Under ₹500");
   if (/(under|below).*\$?100|1000/.test(lower)) chips.add("Under ₹1000");
 
-  const base = ((historyText ? historyText + " " : "") + lower).trim();
+  // Use ONLY the current message for the search query, not history
+  // History is used above for chip detection context, but should not append to the query
+  const base = lower.trim();
   const keywords = base
     .replace(/for\s+(my|a|the)\s+/g, " ")
     .replace(/gift[s]?\s+for\s+/g, " ")
