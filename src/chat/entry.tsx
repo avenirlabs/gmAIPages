@@ -1,16 +1,25 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ChatInterface } from '@/components/gifts/ChatInterface';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
+// Create query client lazily (only when needed)
+let queryClient: QueryClient | null = null;
+
+function getQueryClient() {
+  if (!queryClient) {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          refetchOnWindowFocus: false,
+          retry: 1,
+          staleTime: 5 * 60 * 1000, // 5 minutes
+        },
+      },
+    });
+  }
+  return queryClient;
+}
 
 export function mountChat(selector?: string, options?: { apiBase?: string; starterPrompts?: string[] }) {
   const el = selector ? (document.querySelector(selector) as HTMLElement) : ensureContainer();
@@ -36,12 +45,32 @@ function ensureContainer() {
   return el;
 }
 
+function LoadingFallback() {
+  return (
+    <div style={{
+      width: '100%',
+      maxWidth: '800px',
+      margin: '0 auto',
+      padding: '20px',
+      minHeight: '400px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#666'
+    }}>
+      Loading chat...
+    </div>
+  );
+}
+
 function App({ apiBase, starterPrompts }: { apiBase?: string; starterPrompts?: string[] }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-        <ChatInterface apiBase={apiBase} starterPrompts={starterPrompts} />
-      </div>
+    <QueryClientProvider client={getQueryClient()}>
+      <Suspense fallback={<LoadingFallback />}>
+        <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+          <ChatInterface apiBase={apiBase} starterPrompts={starterPrompts} />
+        </div>
+      </Suspense>
     </QueryClientProvider>
   );
 }
