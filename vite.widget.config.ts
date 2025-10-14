@@ -2,6 +2,11 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "node:path";
 
+// ⚠️ CSP-safe widget build:
+// - IIFE only (no dynamic import runtimes)
+// - No sourcemaps (avoid inline data: URLs)
+// - Single-file output with all CSS inlined
+// - Explicit production defines
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -10,30 +15,38 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "shared"),
     },
   },
-  define: {
-    // Prevent eval-ish dev fallbacks and enable React prod mode
-    "process.env.NODE_ENV": JSON.stringify("production"),
-    global: "window",
-  },
   build: {
-    target: "es2019",
-    sourcemap: false,             // avoid devtool sources that can use eval
-    minify: "terser",             // terser tends to avoid Function constructors
-    outDir: "dist/spa",
-    emptyOutDir: false,
     lib: {
       entry: path.resolve(__dirname, "widget/src/widget.tsx"),
-      name: "GiftsmateChat",      // not used by IIFE runtime, but required by Vite
+      name: "GiftsmateChatWidget",
       formats: ["iife"],
       fileName: () => "giftsmate-chat.js",
     },
+    outDir: "dist/spa",
+    emptyOutDir: false,
+    sourcemap: false,
+    minify: "esbuild",
+    target: "es2020",
+    cssCodeSplit: false,
     rollupOptions: {
       output: {
-        inlineDynamicImports: true, // collapses dynamic graph; avoids runtime codegen
+        entryFileNames: "giftsmate-chat.js",
+        chunkFileNames: "giftsmate-chat.[hash].js",
+        assetFileNames: "giftsmate-chat.[hash][extname]",
+        inlineDynamicImports: true,
+        hoistTransitiveImports: false,
       },
     },
   },
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+    global: "window",
+  },
   esbuild: {
-    supported: { "dynamic-import": true }, // don't polyfill with Function("...")
+    legalComments: "none",
+    supported: { "dynamic-import": true },
+  },
+  css: {
+    postcss: "./postcss.config.js",
   },
 });

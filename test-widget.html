@@ -1,0 +1,21 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>GM Widget Test</title>
+
+<!-- Load the widget from the same origin (WordPress) -->
+<script src="https://giftsmate.net/wp-content/uploads/2025/10/giftsmate-chat.js" defer crossorigin="anonymous"></script>
+
+<!-- Mount point -->
+<giftsmate-chat
+  api-base="https://gm-ai-pages.vercel.app"
+  starter-prompts="Gifts for sister|Diwali gifts|Birthday return gifts">
+</giftsmate-chat>
+
+<!-- Tiny debugger -->
+<script>
+  window.addEventListener('load', () => {
+    console.log('has element?', !!document.querySelector('giftsmate-chat'));
+    console.log('registered?', !!customElements.get('giftsmate-chat'));
+    customElements.whenDefined('giftsmate-chat').then(()=>console.log('defined!'));
+  });
+</script>

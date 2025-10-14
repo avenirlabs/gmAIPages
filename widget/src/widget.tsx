@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import globalStyles from "@/global.css?inline";
 import styles from "./styles.css?inline";
 import Chat from "@/components/gifts/ChatEmbed";
 
@@ -59,10 +60,15 @@ class GiftsmateChat extends HTMLElement {
     if (!this.shadow) {
       this.shadow = this.attachShadow({ mode: "open" });
 
-      // Inject styles
-      const style = document.createElement("style");
-      style.textContent = styles;
-      this.shadow.appendChild(style);
+      // Inject Tailwind/global styles first
+      const globalStyleTag = document.createElement("style");
+      globalStyleTag.textContent = globalStyles;
+      this.shadow.appendChild(globalStyleTag);
+
+      // Inject widget-specific styles
+      const styleTag = document.createElement("style");
+      styleTag.textContent = styles;
+      this.shadow.appendChild(styleTag);
 
       // Create mount point
       const mount = document.createElement("div");
