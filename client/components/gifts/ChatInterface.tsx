@@ -569,7 +569,27 @@ export function ChatInterface({
             const inputIsEmpty = !currentQuery?.trim();
             const showEmptyState = noConversationYet && inputIsEmpty;
 
-            if (showEmptyState) {
+            if (showEmptyState && starterPrompts && starterPrompts.length > 0) {
+              // Empty state: Show custom starter prompts if provided
+              return (
+                <div className="gm-emptystate">
+                  <div className="gm-emptystate-title">Try one of these:</div>
+                  <div className="gm-chips">
+                    {starterPrompts.map((prompt, idx) => (
+                      <button
+                        key={`starter-${idx}`}
+                        className="gm-chip"
+                        onClick={() => handleSend(prompt)}
+                        type="button"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            } else if (showEmptyState) {
+              // Empty state: Show refinement chips as fallback
               return (
                 <div className="gm-emptystate">
                   <div className="gm-emptystate-title">Try one of these:</div>
@@ -583,6 +603,7 @@ export function ChatInterface({
                 </div>
               );
             } else if (chips && chips.length > 0) {
+              // Active state: Show refinement chips after first search
               return (
                 <div className="gm-chips">
                   {chips.map(p => (

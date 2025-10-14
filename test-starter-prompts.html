@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Starter Prompts</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 24px;
+      background: #f5f5f5;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-top: 0;
+    }
+    h2 {
+      color: #666;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    .info {
+      background: #e3f2fd;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #1565c0;
+    }
+    .expected {
+      background: #e8f5e9;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #2e7d32;
+    }
+    giftsmate-chat {
+      display: block;
+      min-height: 500px;
+      border: 1px dashed #ccc;
+      padding: 8px;
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+  <h1>Starter Prompts Test</h1>
+
+  <div class="test-section">
+    <h2>Test 1: Custom Starter Prompts (Homepage Style)</h2>
+    <div class="info">
+      🎯 Testing: Custom prompts via starter-prompts attribute
+    </div>
+    <div class="expected">
+      ✅ Expected: Shows "Gifts for sister", "Diwali gifts", "Birthday return gifts"<br>
+      ❌ Should NOT show: "Personalized Gifts", "Under 999", taxonomy chips
+    </div>
+    <giftsmate-chat
+      api-base="https://gm-ai-pages.vercel.app"
+      starter-prompts="Gifts for sister|Diwali gifts|Birthday return gifts">
+    </giftsmate-chat>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 2: Different Custom Prompts</h2>
+    <div class="info">
+      🎯 Testing: Festival-themed prompts
+    </div>
+    <div class="expected">
+      ✅ Expected: Shows "Diwali gifts", "Rakhi gifts", "Holi gifts", "Christmas gifts"
+    </div>
+    <giftsmate-chat
+      api-base="https://gm-ai-pages.vercel.app"
+      starter-prompts="Diwali gifts|Rakhi gifts|Holi gifts|Christmas gifts">
+    </giftsmate-chat>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 3: No Starter Prompts (Fallback)</h2>
+    <div class="info">
+      🎯 Testing: Widget with no starter-prompts attribute
+    </div>
+    <div class="expected">
+      ✅ Expected: Shows taxonomy-based refinement chips (fallback behavior)
+    </div>
+    <giftsmate-chat
+      api-base="https://gm-ai-pages.vercel.app">
+    </giftsmate-chat>
+  </div>
+
+  <!-- Load widget -->
+  <script src="/dist/spa/giftsmate-chat.js" defer></script>
+
+  <script>
+    window.addEventListener('load', async () => {
+      console.log('[Test] Page loaded');
+
+      // Wait for custom element to be defined
+      await customElements.whenDefined('giftsmate-chat');
+      console.log('[Test] ✅ Custom element defined');
+
+      // Check all widget instances
+      const widgets = document.querySelectorAll('giftsmate-chat');
+      console.log(`[Test] Found ${widgets.length} widget instances`);
+
+      widgets.forEach((widget, idx) => {
+        const prompts = widget.getAttribute('starter-prompts');
+        console.log(`[Test] Widget ${idx + 1}:`, prompts || 'No starter prompts (using fallback)');
+        console.log(`[Test] Shadow DOM:`, !!widget.shadowRoot);
+      });
+    });
+
+    // Log any errors
+    window.addEventListener('error', (e) => {
+      console.error('[Test] ❌ Error:', e.message, e.filename, e.lineno);
+    });
+  </script>
+</body>
+</html>
