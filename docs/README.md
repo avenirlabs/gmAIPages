@@ -23,6 +23,7 @@ This folder contains all developer documentation for Gifts Guru AI, an intellige
 ### Development & Operations
 - **Security**: [security.md](security.md) - Authentication, authorization, and best practices
 - **Performance**: [performance.md](performance.md) - Optimization strategies and monitoring
+- **Telemetry & Analytics**: [telemetry-performance.md](telemetry-performance.md) - Search analytics and performance tracking
 - **Testing & CI**: [testing-ci.md](testing-ci.md) - Test suite and continuous integration
 - **Deployment**: [deployment.md](deployment.md) - Netlify & Vercel deployment guides
 
@@ -75,7 +76,9 @@ This folder contains all developer documentation for Gifts Guru AI, an intellige
 - **Sub-200ms** search latency with Algolia
 - **Intent token caching** for pagination optimization
 - **CSS-only aspect ratios** with no runtime overhead
-- **Comprehensive telemetry** for analytics and monitoring
+- **Zero-latency telemetry** with async fire-and-forget logging
+- **Real-time analytics dashboard** in admin interface
+- **Comprehensive search insights** (zero-hits, top queries, performance metrics)
 - **Progressive enhancement** with accessibility-first design
 
 ## 🔧 Development Workflow
