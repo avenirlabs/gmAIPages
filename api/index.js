@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import { applyCORS, handlePreflight } from './_services/cors.js';
 import { parseQueryTags, tagScore } from './_services/refinements.js';
 import { collectHintsFromTags } from './_services/refinement-hints.js';
+import { logChatEventAsync, getPrivacyCompliantMetadata } from './_services/telemetry.js';
 
 // Supabase client
 function getSupabaseAdmin() {
@@ -476,7 +477,8 @@ const handlers = {
 
       const totalLatencyMs = Date.now() - startTime;
 
-      return res.json({
+      // Build response payload
+      const responsePayload = {
         reply,
         products,
         refineChips,
@@ -494,7 +496,41 @@ const handlers = {
           expandedQuery,                 // Step 7: query + hint terms
           optionalFilters: hints.optionalFilters  // Step 7: Algolia optional filters applied
         }
+      };
+
+      // ✅ SEND RESPONSE IMMEDIATELY (don't wait for logging)
+      res.status(200).json(responsePayload);
+
+      // 🔥 FIRE-AND-FORGET TELEMETRY (runs in background, 0ms user impact)
+      const telemetryMetadata = getPrivacyCompliantMetadata(req);
+      logChatEventAsync({
+        supabase: getSupabaseAdmin(),
+        sessionId: actualSessionId,
+        userText: rawQuery,
+        aiReply: reply,
+        algoliaQuery: searchQuery,
+        chips: refineChips,
+        tags,
+        productsCount: products.length,
+        productIds: products.map(p => p.id),
+        latencyMs: totalLatencyMs,
+        ip: telemetryMetadata.ip,
+        ua: telemetryMetadata.ua,
+        country: telemetryMetadata.country,
+        city: telemetryMetadata.city,
+        page: currentPage,
+        pageSize,
+        totalResults: totalHits,
+        nextCursorExists: hasNext,
+        returnedCount: products.length,
+        zeroHits: products.length === 0,
+        intentTokenUsed: !!intentToken,
+        appliedFilters: filters,
+        broadened: false,
       });
+
+      // Early return - response already sent
+      return;
 
     } catch (error) {
       return res.status(500).json({ error: "Failed to process chat request", details: error.message });
