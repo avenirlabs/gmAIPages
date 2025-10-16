@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Analytics } from "@/components/admin/Analytics";
 
 interface PageRow {
   id: string;
@@ -38,7 +39,7 @@ export default function Admin() {
   const [chipDraft, setChipDraft] = useState("");
   const [navLinks, setNavLinks] = useState<NavLinkRow[]>([]);
   const [navLoading, setNavLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"pages">("pages");
+  const [activeTab, setActiveTab] = useState<"pages" | "analytics">("pages");
 
   useEffect(() => {
     supabase.auth
@@ -242,6 +243,28 @@ export default function Admin() {
         </div>
       </header>
 
+      {/* Tab Navigation */}
+      <div className="flex gap-2 rounded-xl border bg-white p-2">
+        <Button
+          variant={activeTab === "pages" ? "default" : "ghost"}
+          onClick={() => setActiveTab("pages")}
+        >
+          Pages & Navigation
+        </Button>
+        <Button
+          variant={activeTab === "analytics" ? "default" : "ghost"}
+          onClick={() => setActiveTab("analytics")}
+        >
+          Analytics
+        </Button>
+      </div>
+
+      {/* Content based on active tab */}
+      {activeTab === "analytics" ? (
+        <div className="rounded-xl border bg-white p-6">
+          <Analytics />
+        </div>
+      ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
           <aside className="rounded-xl border bg-white p-3">
             <input
@@ -775,6 +798,7 @@ export default function Admin() {
         </div>
       </section>
         </div>
+      )}
     </div>
   );
 }
