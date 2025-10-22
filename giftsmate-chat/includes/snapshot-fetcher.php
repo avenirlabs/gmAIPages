@@ -66,8 +66,9 @@ function giftsmate_fetch_snapshot($key, $limit = 8) {
         echo '<!-- gm cache: MISS key=' . esc_html($cache_key) . ' -->' . "\n";
     });
 
-    // Build API URL
-    $base_url = apply_filters('giftsmate_snapshot_base', 'https://gm-ai-pages.vercel.app/api/snapshots');
+    // Build API URL - use setting or default
+    $api_base = get_option('giftsmate_api_base', 'https://gm-ai-pages.vercel.app');
+    $base_url = apply_filters('giftsmate_snapshot_base', trailingslashit($api_base) . 'api/snapshots');
     $base_url = trailingslashit($base_url);
     $snapshot_url = $base_url . $key . '.json';
 
@@ -158,8 +159,10 @@ function giftsmate_fetch_snapshot($key, $limit = 8) {
     }
 
     // Cache successful result
-    $ttl = apply_filters('giftsmate_snapshot_ttl', 3600); // 1 hour default
-    set_transient($cache_key, $items, absint($ttl));
+    // Use cache duration from settings or default
+    $cache_duration = get_option('giftsmate_cache_duration', 3600);
+    $ttl = apply_filters('giftsmate_snapshot_ttl', absint($cache_duration));
+    set_transient($cache_key, $items, $ttl);
 
     return $items;
 }

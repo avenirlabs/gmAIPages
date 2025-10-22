@@ -35,14 +35,18 @@ function giftsmate_register_shortcodes() {
  */
 function giftsmate_chat_shortcode_handler($atts) {
     // Parse and sanitize shortcode attributes
+    // Get defaults from settings
+    $default_snapshot_limit = get_option('giftsmate_default_snapshot_limit', 8);
+    $default_api_base = get_option('giftsmate_api_base', 'https://gm-ai-pages.vercel.app');
+
     $atts = shortcode_atts([
         'relationship'    => '',
         'occasion'        => '',
         'chips'           => '',
         'first_prompt'    => '',
         'snapshot_key'    => '',
-        'snapshot_limit'  => '8',
-        'api_base'        => 'https://gm-ai-pages.vercel.app',
+        'snapshot_limit'  => (string)$default_snapshot_limit,
+        'api_base'        => $default_api_base,
         'class'           => '',
         'style'           => '',
     ], $atts, 'giftsmate_chat');
