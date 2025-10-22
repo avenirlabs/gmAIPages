@@ -599,6 +599,20 @@ const handlers = {
     } catch (error) {
       return res.json({ error: error.message });
     }
+  },
+
+  // Snapshots endpoint - Server-rendered product cards for WordPress plugin
+  'GET /snapshots/:key.json': async (req, res, params) => {
+    const snapshotsHandler = await import('./snapshots/[key].js');
+    // Pass the key from params via query object (matching file's expectation)
+    req.query = { ...req.query, key: params.key };
+    return snapshotsHandler.default(req, res);
+  },
+
+  // Metrics endpoint - Analytics intake for widget events
+  'POST /metrics/gm-widget': async (req, res) => {
+    const metricsHandler = await import('./metrics/gm-widget.js');
+    return metricsHandler.default(req, res);
   }
 };
 
@@ -627,6 +641,13 @@ export default async function handler(req, res) {
       const slug = normalizedPath.substring(7); // Remove '/pages/'
       params.slug = slug;
       route = `${req.method} /pages/:slug`;
+    }
+
+    // Handle /snapshots/:key.json pattern
+    if (normalizedPath.startsWith('/snapshots/') && normalizedPath.endsWith('.json')) {
+      const key = normalizedPath.substring(11, normalizedPath.length - 5); // Extract key
+      params.key = key;
+      route = `${req.method} /snapshots/:key.json`;
     }
 
     if (handlers[route]) {
