@@ -2,6 +2,145 @@
 
 All notable changes to the Gifts Guru AI search system will be documented in this file.
 
+## [v1.7.0] - 2025-10-22 - WordPress Plugin API Endpoints
+
+### ✨ New Features: Snapshots & Metrics Endpoints
+
+**Version**: 20251022113500
+
+#### Endpoints Added
+
+**1. Snapshots Endpoint** - Server-Rendered Product Cards
+- **Route**: `GET /api/snapshots/:key.json`
+- **Purpose**: Provides curated product snapshots for WordPress plugin SSR
+- **Features**:
+  - Dual mode: Algolia (live) + Static presets (demo/fallback)
+  - 3 demo snapshots: dad-birthday, mom-anniversary, tech-lover
+  - Price in PAISE format (₹1,499 = 149900)
+  - Never 404 - returns empty array for unknown keys
+  - CDN-friendly cache headers (1hr fresh, 24hr stale-while-revalidate)
+  - CORS wildcard for cross-origin access
+
+**2. Metrics Endpoint** - Widget Analytics Intake
+- **Route**: `POST /api/metrics/gm-widget`
+- **Purpose**: Fire-and-forget analytics collection for widget events
+- **Features**:
+  - Event whitelist: snapshot_view, chip_click, chat_open, auto_open, widget_loaded, widget_error
+  - Always returns 204 No Content (never blocks UX)
+  - In-memory rate limiting: 100 events/60s per IP
+  - Field sanitization and validation
+  - Optional webhook forwarding via `METRICS_WEBHOOK_URL`
+  - Zero dependencies
+
+#### Implementation Details
+- **Architecture**: Integrated into main API handler (`api/index.js`)
+- **Routing**: Dynamic route extraction for `/snapshots/:key.json`
+- **WordPress Compatible**: Matches all plugin expectations exactly
+
+#### Files Changed
+- `api/snapshots/[key].js`: Snapshots endpoint (465 lines)
+- `api/metrics/gm-widget.js`: Metrics endpoint (152 lines)
+- `api/index.js`: Added route handlers and dynamic routing
+- `SNAPSHOTS-ENDPOINT-GUIDE.md`: Complete snapshots documentation
+- `METRICS-ENDPOINT-GUIDE.md`: Complete metrics documentation
+- `DEPLOYMENT-SUCCESS.md`: Deployment verification report
+
+#### Test Results
+- ✅ Snapshots: Returns 8 products for dad-birthday
+- ✅ Snapshots: Returns 8 products for mom-anniversary
+- ✅ Snapshots: Returns empty array for unknown keys
+- ✅ Metrics: Returns 204 for valid events
+- ✅ Metrics: Returns 400 for invalid events
+- ✅ CORS: Preflight working correctly
+
+#### Environment Variables
+- `ALGOLIA_APP_ID`: For live product data (optional)
+- `ALGOLIA_API_KEY`: For live product data (optional)
+- `ALGOLIA_INDEX_PREFIX`: Index name prefix (default: "giftsmate")
+- `METRICS_WEBHOOK_URL`: Forward events to external service (optional)
+
+#### WordPress Plugin Integration
+```php
+// Snapshots - Server-rendered cards
+$snapshot_url = "https://gm-ai-pages.vercel.app/api/snapshots/dad-birthday.json";
+
+// Metrics - Analytics beacons
+navigator.sendBeacon(
+  'https://gm-ai-pages.vercel.app/api/metrics/gm-widget',
+  JSON.stringify({ event: 'snapshot_view', page_path: '/gifts-for-dad' })
+);
+```
+
+#### Deployment
+- **Branch**: `main`
+- **Commits**: `3d2d9d4`, `68be3ee`, `2d5320e`
+- **Status**: ✅ Deployed and verified
+- **Production URL**: `https://gm-ai-pages.vercel.app`
+
+---
+
+## [v1.6.1] - 2025-10-14 - Starter Prompts Fix & Performance Optimization
+
+### 🐛 Bug Fix: Custom Starter Prompts
+**Version**: 20251014162154
+
+#### Issue Fixed
+- **Problem**: Widget was showing taxonomy refinement chips ("Personalized Gifts", "Under 999") instead of custom starter prompts configured via `starter-prompts` attribute
+- **Root Cause**: Refinement chips were overriding starter prompts in empty state
+- **Impact**: Users couldn't customize initial suggestions on homepage/landing pages
+
+#### Solution
+- Modified `ChatInterface.tsx` to prioritize custom starter prompts in empty state
+- If `starter-prompts` provided → Show custom prompts ✅
+- If no `starter-prompts` → Fall back to refinement chips
+- After first search → Show context-aware refinement chips
+
+#### Files Changed
+- `client/components/gifts/ChatInterface.tsx`: Added starter prompts priority logic (lines 572-624)
+
+#### WordPress Integration
+```html
+<giftsmate-chat
+  api-base="https://gm-ai-pages.vercel.app"
+  starter-prompts="Gifts for sister|Diwali gifts|Birthday return gifts">
+</giftsmate-chat>
+```
+
+### ⚡ Performance: ESM Build Optimization
+**Version**: 20251014153557
+
+#### Optimizations Applied
+- Switched from esbuild to terser with 2-pass aggressive minification
+- Enabled unsafe optimizations for maximum compression
+- Implemented lazy QueryClient instantiation
+- Added Suspense wrapper with loading fallback
+- Improved code splitting: ui-vendor, react-vendor, query-vendor
+- Enabled explicit tree-shaking in esbuild config
+
+#### Build Results
+- `chat-app.js`: 117 KB → 24.17 KB gzipped (application logic)
+- `react-vendor.js`: 221 KB → 54.12 KB gzipped (React + ReactDOM)
+- `query-vendor.js`: 61 KB → 12.53 KB gzipped (TanStack Query)
+- `ui-vendor.js`: 4 KB → 1.33 KB gzipped (Radix UI)
+- **Total ESM**: 403 KB → 92.15 KB gzipped (4 chunks)
+
+#### Performance Gains
+- First load (WiFi): **36% faster** than IIFE (540ms vs 850ms)
+- App updates: **72% faster** (240ms vs 850ms, React cached)
+- Granular caching: Only 24 KB downloaded on app updates
+- HTTP/2 parallel downloads: ~20% faster on 3G
+
+#### Files Modified
+- `vite.chat-esm.config.ts`: Aggressive terser config, improved chunking
+- `src/chat/entry.tsx`: Lazy QueryClient, Suspense wrapper
+
+#### Documentation
+- `OPTIMIZATION-RESULTS.md`: Detailed performance analysis
+- `PERFORMANCE-ANALYSIS.md`: Strategy and future improvements
+- `WORDPRESS-DEPLOYMENT.md`: Complete WordPress integration guide
+
+---
+
 ## [v1.6.0] - 2024-12-XX - Navigation, Full-Width Chat & Image Aspects
 
 ### Epic: Navigation nesting + full-width chat + square/portrait product images
